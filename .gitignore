@@ -21,3 +21,6 @@ project/plugins/project/
 .project
 .settings/
 /bin/
+
+# Heroku specific
+.env

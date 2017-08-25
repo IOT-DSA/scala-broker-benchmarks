@@ -41,6 +41,7 @@ package object benchmark {
       Files.delete(dir)
     }
 
+    log.debug("Connecting to broker at {}", BrokerUrl)
     DSAConnector.create(brokerUrl = BrokerUrl, nodesPath = Some(nodesJsonPath.toString),
       keyPath = Some(keyPath.toString), dslinkJsonPath = Some(dslinkJsonPath.toString),
       dslinkName = Some(name))
