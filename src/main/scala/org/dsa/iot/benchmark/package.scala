@@ -2,9 +2,10 @@ package org.dsa.iot
 
 import java.nio.file.Files
 
-import _root_.scala.util.Random
 import _root_.scala.concurrent.duration.Duration
+import _root_.scala.util.Random
 
+import org.dsa.iot.dslink.node.Node
 import org.dsa.iot.scala.DSAConnector
 import org.slf4j.LoggerFactory
 
@@ -59,4 +60,31 @@ package object benchmark {
    * Waits the specified
    */
   def pause(duration: Duration) = Thread.sleep(duration.toMillis)
+
+  /**
+   * Returns node info.
+   */
+  def nodeInfo(node: Node): String = {
+    val name = node.getName
+    val display = node.getDisplayName
+    val path = node.getPath
+    val value = node.getValue
+    val valueType = Option(node.getValueType).map(_.getRawName).orNull
+    val action = Option(node.getAction).map { a =>
+      s"Action(params=${a.getParams.size},type=${a.getResultType},perm=${a.getPermission})"
+    }.orNull
+    val profile = node.getProfile
+    val config = node.getConfigurations
+    val ifaces = node.getInterfaces
+    val attrs = node.getAttributes
+    val roConfig = node.getRoConfigurations
+    val link = Option(node.getLink).map(_ => "yes").orNull
+    val writable = node.getWritable
+    val childCount = Option(node.getChildren) map (_.size) getOrElse 0
+
+    s"""name=$name, display=$display, path=$path, value=$value, type=$valueType, 
+      | action=$action, profile=$profile, configs=$config,
+      | ifaces=$ifaces, attrs=$attrs, roConfigs=$roConfig,
+      | link=$link, writable=$writable, children=$childCount""".stripMargin.replaceAll("\n", "")
+  }
 }

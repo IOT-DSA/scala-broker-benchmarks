@@ -17,6 +17,7 @@ run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Comp
 
 // packaging
 enablePlugins(JavaAppPackaging)
+mainClass in Compile := Some("org.dsa.iot.benchmark.BrokerConnectionTest")
 	
 // dependencies
 libraryDependencies ++= Seq(
