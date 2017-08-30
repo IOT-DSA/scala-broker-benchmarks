@@ -22,7 +22,7 @@ object BrokerExploreTest extends App {
   val connection = connector.start(REQUESTER)
   implicit val requester = connection.requester
 
-  DSAHelper.list("/defs/profile").subscribe { rsp =>
+  DSAHelper.list(Settings.ExplorePath).subscribe { rsp =>
     println(nodeInfo(rsp.getNode))
     println("Children:")
     rsp.getUpdates.asScala collect {
