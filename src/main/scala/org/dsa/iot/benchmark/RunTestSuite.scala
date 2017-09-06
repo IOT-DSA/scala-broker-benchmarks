@@ -1,5 +1,7 @@
 package org.dsa.iot.benchmark
 
+import scala.concurrent.duration.DurationInt
+
 import org.slf4j.LoggerFactory
 
 object RunTestSuite extends App {
@@ -12,7 +14,12 @@ object RunTestSuite extends App {
 
   if (runConnectionTest) {
     BrokerConnectionTest.main(noargs)
-    Thread.sleep(2000)
+    pause(2 seconds)
+  }
+
+  if (runExploreTest) {
+    BrokerExploreTest.main(noargs)
+    pause(2 seconds)
   }
 
   SampleResponder.main(noargs)

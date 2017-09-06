@@ -12,6 +12,7 @@ object Settings {
   
   object Suite {
     val runConnectionTest = props.envOrElse("test.connection", "true").toBoolean
+    val runExploreTest = props.envOrElse("test.explore", "true").toBoolean
   }
 
   object Responder {
