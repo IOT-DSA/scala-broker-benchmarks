@@ -24,7 +24,7 @@ object SampleResponder extends App {
   implicit val responder = connection.responder
 
   prepareResponder(responder, NodeCount, AttributeCount)
-
+  
   sys.addShutdownHook {
     connector.stop
   }
