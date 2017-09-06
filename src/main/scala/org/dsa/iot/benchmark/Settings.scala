@@ -9,6 +9,11 @@ object Settings {
   val BrokerUrl = props.envOrElse("dsa.brokerUrl", "http://localhost:8080/conn")
 
   val ExplorePath = props.envOrElse("dsa.explore.path", "/defs/profile")
+  
+  object Suite {
+    val runConnectionTest = props.envOrElse("test.connection", "true").toBoolean
+    val runExploreTest = props.envOrElse("test.explore", "true").toBoolean
+  }
 
   object Responder {
     val Id = props.envOrElse("responder.id", "SampleResponder")

@@ -15,7 +15,7 @@ object BrokerExploreTest extends App {
 
   val log = LoggerFactory.getLogger(getClass)
   
-  log.info("Broker Explorer Test")
+  log.info("Starting Broker Explorer Test")
 
   val id = args.headOption getOrElse Random.alphanumeric.take(5).mkString.capitalize
   val connector = createConnector(id, "/requester.json")
@@ -34,5 +34,4 @@ object BrokerExploreTest extends App {
   pause(5 seconds)
 
   connector.stop
-  sys.exit
 }

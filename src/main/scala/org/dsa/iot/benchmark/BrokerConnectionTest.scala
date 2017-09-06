@@ -12,6 +12,8 @@ object BrokerConnectionTest extends App {
   import org.dsa.iot.scala.LinkMode._
 
   val log = LoggerFactory.getLogger(getClass)
+  
+  log.info("Starting Broker Connection Test")
 
   val id = args.headOption getOrElse Random.alphanumeric.take(5).mkString.capitalize
   val connector = createConnector(id, "/requester.json")
@@ -21,5 +23,4 @@ object BrokerConnectionTest extends App {
   pause(2 seconds)
 
   connector.stop
-  sys.exit
 }
