@@ -17,9 +17,17 @@ object Settings {
     val NodeCount = props.envOrElse("responder.nodeCount", "100").toInt
     val AttributeCount = props.envOrElse("responder.attributeCount", "100").toInt
   }
-  
+
   object Invoke {
     val BatchSize = props.envOrElse("invoke.batchSize", "10").toInt
     val Timeout = props.envOrElse("invoke.timeout", "1000").toInt milliseconds
+  }
+
+  object Publish {
+    val AttributeBatchSize = props.envOrElse("publish.attributeBatchSize", "10").toInt
+    val AttributeTimeout = props.envOrElse("publish.attributeTimeout", "1000").toInt milliseconds
+
+    val ValueBatchSize = props.envOrElse("publish.valueBatchSize", "10").toInt
+    val ValueTimeout = props.envOrElse("publish.valueTimeout", "1000").toInt milliseconds
   }
 }
