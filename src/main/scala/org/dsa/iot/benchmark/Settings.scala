@@ -30,4 +30,9 @@ object Settings {
     val ValueBatchSize = props.envOrElse("publish.valueBatchSize", "10").toInt
     val ValueTimeout = props.envOrElse("publish.valueTimeout", "1000").toInt milliseconds
   }
+  
+  object Subscribe {
+    val BatchSize = props.envOrElse("subscribe.batchSize", "10").toInt
+    val Timeout = props.envOrElse("subscribe.timeout", "1000").toInt milliseconds
+  }
 }
