@@ -25,11 +25,10 @@ object SampleResponder extends App {
 
   prepareResponder(responder, NodeCount, AttributeCount)
 
-  waitForEnter
-
-  connector.stop
-  sys.exit
-
+  sys.addShutdownHook {
+    connector.stop
+  }
+  
   /**
    * Prepares responder data.
    */
