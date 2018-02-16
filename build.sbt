@@ -1,7 +1,8 @@
 // properties
-val APP_VERSION = "0.1.0-SNAPSHOT"
-val SCALA_VERSION = "2.11.8"
-val SCALA_DSA_VERSION = "0.4.0"
+val APP_VERSION = "0.2.0-SNAPSHOT"
+val SCALA_VERSION = "2.12.4"
+val AKKA_VERSION = "2.5.9"
+val AKKA_HTTP_VERSION = "10.0.11"
 
 // settings
 name := "scala-broker-benchmarks"
@@ -9,10 +10,22 @@ organization := "org.iot-dsa"
 version := APP_VERSION
 scalaVersion := SCALA_VERSION
 
+// eclipse
+EclipseKeys.preTasks := Seq(compile in Compile, compile in Test)
+EclipseKeys.withSource := true
+EclipseKeys.withJavadoc := true
+
 // building
 resolvers += Resolver.bintrayRepo("cakesolutions", "maven")
-scalacOptions ++= Seq("-feature", "-unchecked", "-deprecation", "-Xlint", 
-	"-Ywarn-dead-code", "-language:_", "-target:jvm-1.7", "-encoding", "UTF-8")
+scalacOptions ++= Seq(
+  "-feature", 
+  "-unchecked", 
+  "-deprecation", 
+  "-Xlint", 
+  "-Ywarn-dead-code", 
+  "-language:_", 
+  "-target:jvm-1.8", 
+  "-encoding", "UTF-8")
 run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run))
 
 // packaging
@@ -21,7 +34,12 @@ mainClass in Compile := Some("org.dsa.iot.benchmark.BrokerConnectionTest")
 	
 // dependencies
 libraryDependencies ++= Seq(
-  "org.iot-dsa"        %% "sdk-dslink-scala"        % SCALA_DSA_VERSION,
-  "org.scalatest"      %% "scalatest"               % "2.2.1"         % "test",
-  "org.scalacheck"     %% "scalacheck"              % "1.12.1"        % "test"  
+  "com.typesafe.akka"       %% "akka-stream"             % AKKA_VERSION,
+  "com.typesafe.akka"       %% "akka-slf4j"              % AKKA_VERSION,
+  "com.typesafe.akka"       %% "akka-http"               % AKKA_HTTP_VERSION,
+  "org.bouncycastle"         % "bcprov-jdk15on"          % "1.51",
+  "ch.qos.logback"           % "logback-classic"         % "1.2.3",
+  "org.scalatest"           %% "scalatest"               % "3.0.4"             % "test",
+  "org.scalacheck"          %% "scalacheck"              % "1.13.5"            % "test",
+  "com.typesafe.akka"       %% "akka-testkit"            % AKKA_VERSION        % "test"
 )
