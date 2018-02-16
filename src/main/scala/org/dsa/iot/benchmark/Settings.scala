@@ -12,10 +12,21 @@ object Settings {
 
   val ExplorePath = props.envOrElse("dsa.explore.path", "/defs/profile")
 
+  val ReportDir = props.envOrElse("report.dir", "./reports/test")
+
+  object Loop {
+    val Instances = props.envOrElse("loop.instances", "10").toInt
+    val Id = props.envOrElse("loop.id", "Loop")
+    val BatchSize = props.envOrElse("loop.invoke.batch", "50").toInt
+    val Timeout = props.envOrElse("loop.invoke.timeout", "1000").toInt milliseconds
+    val ReportTimeout = props.envOrElse("loop.report.timeout", "5000").toInt milliseconds
+  }
+
   object Responder {
-    val Id = props.envOrElse("responder.id", "SampleResponder")
-    val NodeCount = props.envOrElse("responder.nodeCount", "100").toInt
-    val AttributeCount = props.envOrElse("responder.attributeCount", "100").toInt
+    val Instances = props.envOrElse("responder.instances", "5").toInt
+    val Id = props.envOrElse("responder.id", "BenchmarkResponder")
+    val NodeCount = props.envOrElse("responder.nodeCount", "10").toInt
+    val AttributeCount = props.envOrElse("responder.attributeCount", "10").toInt
   }
 
   object Invoke {
@@ -30,7 +41,7 @@ object Settings {
     val ValueBatchSize = props.envOrElse("publish.valueBatchSize", "10").toInt
     val ValueTimeout = props.envOrElse("publish.valueTimeout", "1000").toInt milliseconds
   }
-  
+
   object Subscribe {
     val BatchSize = props.envOrElse("subscribe.batchSize", "10").toInt
     val Timeout = props.envOrElse("subscribe.timeout", "1000").toInt milliseconds

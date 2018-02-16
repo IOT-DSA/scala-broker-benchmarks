@@ -1,7 +1,5 @@
 package org.dsa.iot.benchmark
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
 import org.dsa.iot.dslink.link.Responder
 import org.dsa.iot.scala._
 import org.slf4j.LoggerFactory
@@ -9,7 +7,7 @@ import org.slf4j.LoggerFactory
 /**
  * Starts a sample responder for testing.
  */
-object SampleResponder extends App {
+object BenchmarkResponder extends App {
   import Settings.Responder._
   import org.dsa.iot.dslink.node.value.ValueType._
   import org.dsa.iot.scala.LinkMode._
@@ -17,18 +15,30 @@ object SampleResponder extends App {
 
   val log = LoggerFactory.getLogger(getClass)
 
-  log.info("Starting Sample Responder")
-
-  val connector = createConnector(Id, "/responder.json")
-  val connection = connector.start(RESPONDER)
-  implicit val responder = connection.responder
-
-  prepareResponder(responder, NodeCount, AttributeCount)
+  log.info("Starting {} responders", Instances)
+  (1 to Instances) foreach startResponder
   
-  sys.addShutdownHook {
-    connector.stop
+  waitForEnter
+  sys.exit
+
+  /**
+   * Creates and starts a responder.
+   */
+  private def startResponder(index: Int) = {
+    val id = Id + index
+    log.info("Starting Responder {}", id)
+
+    val connector = createConnector(id, "/responder.json")
+    val connection = connector.start(RESPONDER)
+    implicit val responder = connection.responder
+
+    prepareResponder(responder, NodeCount, AttributeCount)
+
+    sys.addShutdownHook {
+      connector.stop
+    }
   }
-  
+
   /**
    * Prepares responder data.
    */
@@ -45,7 +55,7 @@ object SampleResponder extends App {
           val oldVal = data.getValue: Int
           val newVal = oldVal + 1
           data.setValue(newVal)
-          log.debug(s"Counter$idx changed by ACTION [incCounter] to: " + newVal)
+          log.debug(s"Counter$idx changed by ACTION[incCounter] to: " + newVal)
         }
       }) build ()
     }
