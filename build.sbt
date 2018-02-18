@@ -37,6 +37,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka"       %% "akka-stream"             % AKKA_VERSION,
   "com.typesafe.akka"       %% "akka-slf4j"              % AKKA_VERSION,
   "com.typesafe.akka"       %% "akka-http"               % AKKA_HTTP_VERSION,
+  "com.typesafe.play"       %% "play-json"               % "2.6.8",
   "org.bouncycastle"         % "bcprov-jdk15on"          % "1.51",
   "ch.qos.logback"           % "logback-classic"         % "1.2.3",
   "org.scalatest"           %% "scalatest"               % "3.0.4"             % "test",
