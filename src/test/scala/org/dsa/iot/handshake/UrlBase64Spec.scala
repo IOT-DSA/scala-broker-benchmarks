@@ -3,12 +3,12 @@ package org.dsa.iot.handshake
 import java.io.UnsupportedEncodingException
 
 import org.bouncycastle.util.encoders.{ DecoderException, UrlBase64 => Bouncy }
-import org.scalatest.{ MustMatchers, Suite, WordSpecLike }
+import org.dsa.iot.AbstractSpec
 
 /**
  * Test suite for UrlBase64 functions.
  */
-class UrlBase64Spec extends Suite with WordSpecLike with MustMatchers {
+class UrlBase64Spec extends AbstractSpec {
   import UrlBase64._
 
   "bouncyEncode" should {

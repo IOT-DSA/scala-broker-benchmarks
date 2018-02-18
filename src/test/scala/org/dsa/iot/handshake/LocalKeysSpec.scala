@@ -1,11 +1,11 @@
 package org.dsa.iot.handshake
 
-import org.scalatest._
+import org.dsa.iot.AbstractSpec
 
 /**
  * Test suite for LocalKeys.
  */
-class LocalKeysSpec extends Suite with WordSpecLike with MustMatchers {
+class LocalKeysSpec extends AbstractSpec {
 
   "serialized-deserialized keys" should {
     "retain equality to the originals" in {

@@ -1,11 +1,11 @@
 package org.dsa.iot.handshake
 
-import org.scalatest._
+import org.dsa.iot.AbstractSpec
 
 /**
  * Test suite for RemoteKey.
  */
-class RemoteKeySpec extends Suite with WordSpecLike with MustMatchers {
+class RemoteKeySpec extends AbstractSpec {
 
   "normalize" should {
     "left-pad arrays shorter than 32" in {
