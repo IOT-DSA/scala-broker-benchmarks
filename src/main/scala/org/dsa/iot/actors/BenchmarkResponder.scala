@@ -4,7 +4,7 @@ import org.dsa.iot.rpc._
 import org.dsa.iot.util.SimpleCache
 import org.joda.time.DateTime
 
-import akka.actor.ActorRef
+import akka.actor.{ ActorRef, Props }
 
 /**
  * A sample responder that creates a list of nodes with names data0, data1, etc. with the initial value of 0.
@@ -182,4 +182,14 @@ class BenchmarkResponder(linkName: String, nodeCount: Int, out: ActorRef)
    * A constant for "$is" -> "node" tuple.
    */
   private val isNode = is("node")
+}
+
+/**
+ * Factory for [[BenchmarkResponder]] instances.
+ */
+object BenchmarkResponder {
+  /**
+   * Creates a new BenchmarkResponder props.
+   */
+  def props(linkName: String, nodeCount: Int, out: ActorRef) = Props(new BenchmarkResponder(linkName, nodeCount, out))
 }
