@@ -36,9 +36,9 @@ class BenchmarkResponder(linkName: String, nodeCount: Int, out: ActorRef)
    * Handles incoming messages of [[RequestMessage]] type.
    */
   override def receive = super.receive orElse {
-    case env: RequestMessage =>
-      log.debug("{}: received {}", linkName, env)
-      val responses = env.requests flatMap processRequest
+    case msg: RequestMessage =>
+      log.debug("{}: received {}", linkName, msg)
+      val responses = msg.requests flatMap processRequest
       sendToSocket(ResponseMessage(localMsgId.inc, None, responses))
 
     case msg => log.warning("{}: received unknown message - {}", linkName, msg)

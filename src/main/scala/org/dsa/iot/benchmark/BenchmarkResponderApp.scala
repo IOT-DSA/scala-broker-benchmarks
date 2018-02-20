@@ -26,12 +26,12 @@ object BenchmarkResponderApp extends App {
 
   val brokerUrl = props.envOrElse("broker.url", "http://localhost:8080/conn")
 
-  val instances = props.envOrElse("responder.instances", "5").toInt
+  val instances = props.envOrElse("responder.instances", "1").toInt
   val nodeCount = props.envOrElse("responder.nodes", "10").toInt
   val namePrefix = props.envOrElse("responder.name", "benchmark-responder")
 
   log.info(
-    "Launching {} responder instances, {} nodes each under name prefix '{}'",
+    "Launching {} responder instance(s), {} nodes each under name prefix '{}'",
     instances.toString, nodeCount.toString, namePrefix)
 
   implicit val system = ActorSystem()
