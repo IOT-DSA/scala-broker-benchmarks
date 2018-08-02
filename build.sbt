@@ -1,19 +1,14 @@
 // properties
 val APP_VERSION = "0.2.0-SNAPSHOT"
-val SCALA_VERSION = "2.12.4"
-val AKKA_VERSION = "2.5.9"
-val AKKA_HTTP_VERSION = "10.0.11"
+val SCALA_VERSION = "2.12.6"
+val AKKA_VERSION = "2.5.13"
+val AKKA_HTTP_VERSION = "10.1.3"
 
 // settings
 name := "scala-broker-benchmarks"
 organization := "org.iot-dsa"
 version := APP_VERSION
 scalaVersion := SCALA_VERSION
-
-// eclipse
-EclipseKeys.preTasks := Seq(compile in Compile, compile in Test)
-EclipseKeys.withSource := true
-EclipseKeys.withJavadoc := true
 
 // building
 resolvers += Resolver.bintrayRepo("cakesolutions", "maven")
@@ -36,6 +31,7 @@ mainClass in Compile := Some("org.dsa.iot.benchmark.BrokerConnectionTest")
 libraryDependencies ++= Seq(
   "com.typesafe.akka"       %% "akka-stream"             % AKKA_VERSION,
   "com.typesafe.akka"       %% "akka-slf4j"              % AKKA_VERSION,
+  "com.typesafe.akka"       %% "akka-actor-typed"        % "2.5.11",
   "com.typesafe.akka"       %% "akka-http"               % AKKA_HTTP_VERSION,
   "com.typesafe.play"       %% "play-json"               % "2.6.8",
   "de.heikoseeberger"       %% "akka-http-play-json"     % "1.19.0",

@@ -1,6 +1,8 @@
 *.class
 *.log
 
+# app specific
+
 # sbt specific
 .cache
 .cache-main
@@ -21,6 +23,9 @@ project/plugins/project/
 .project
 .settings/
 /bin/
+
+# IntelliJ specific
+.idea
 
 # Heroku specific
 .env
