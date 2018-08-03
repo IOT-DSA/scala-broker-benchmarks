@@ -1,27 +1,28 @@
 package org.dsa.iot.rpc
 
-import scala.math.BigDecimal.double2bigDecimal
-import scala.math.BigDecimal.long2bigDecimal
+import scala.math.BigDecimal.{double2bigDecimal, long2bigDecimal}
 
 /**
- * Base trait for DSA-compatible values.
- */
+  * Base trait for DSA-compatible values.
+  */
 sealed trait DSAValue[T] extends Serializable {
   val value: T
 
   override def toString = value.toString
 
   override def hashCode = value.hashCode()
+
   override def equals(other: Any) = other match {
     case that: DSAValue[T] => (that canEqual this) && value == that.value
     case _                 => false
   }
+
   def canEqual(other: Any): Boolean = other.isInstanceOf[DSAValue[T]]
 }
 
 /**
- * Defines available DSAValue types and methods for serializing them to/from JSON.
- */
+  * Defines available DSAValue types and methods for serializing them to/from JSON.
+  */
 object DSAValue {
   type Binary = Array[Byte]
 
@@ -30,6 +31,8 @@ object DSAValue {
   type DSAArray = Iterable[DSAVal]
 
   implicit class NumericValue(val value: BigDecimal) extends DSAValue[BigDecimal]
+
+  implicit def intToNumericValue(x: Int) = NumericValue(x)
 
   implicit def longToNumericValue(x: Long) = NumericValue(x)
 

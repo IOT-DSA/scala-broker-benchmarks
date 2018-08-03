@@ -21,7 +21,7 @@ import akka.stream.ActorMaterializer
  */
 object BenchmarkResponderApp extends App {
   import scala.util.{ Properties => props }
-
+  
   val log = LoggerFactory.getLogger(getClass)
 
   val brokerUrl = props.envOrElse("broker.url", "http://localhost:8080/conn")
@@ -39,12 +39,10 @@ object BenchmarkResponderApp extends App {
 
   implicit val ec = system.dispatcher
 
-  val keys = LocalKeys.getFromClasspath("/keys")
-  val connector = new WebSocketConnector(keys)
-
   val connections = (1 to instances) map { index =>
+    val connector = new WebSocketConnector(LocalKeys.generate)
     val name = namePrefix + index
-    val propsFunc = (out: ActorRef) => BenchmarkResponder.props(name, nodeCount, out)
+    val propsFunc = (out: ActorRef) => BenchmarkResponder.props(name, out)
     connector.connect(name, brokerUrl, false, true, propsFunc)
   }
 

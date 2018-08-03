@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+env \
+  "broker.url=http://localhost:8080/conn" \
+  "stats.interval=20000" \
+  "responder.instances=2" \
+  "responder.nodes=5" \
+  "responder.name=benchmark-responder" \
+  "responder.autoinc.interval=2000" \
+  "responder.autoinc.nodes=3" \
+  $DIR/../target/universal/stage/bin/benchmark-responder-app
