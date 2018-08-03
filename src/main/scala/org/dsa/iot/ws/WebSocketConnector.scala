@@ -37,7 +37,6 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
               propsFunc: ActorRef => Props) = {
     val connUrl = new URL(brokerUrl)
 
-    val publicKey = keys.encodedPublicKey
     val dsId = dslinkName + "-" + keys.encodedHashedPublicKey
 
     val connReq = ConnectionRequest(keys.encodedPublicKey, isRequester, isResponder, None, "1.1.2",

@@ -2,7 +2,7 @@
 <configuration>
 
     <conversionRule conversionWord="coloredLevel"
-                    converterClass="play.api.libs.logback.ColoredLevel"/>
+                    converterClass="org.dsa.iot.util.ColoredLevel"/>
 
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
         <file>${application.home:-.}/logs/application.log</file>
@@ -13,7 +13,7 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%level %logger{15} - %message%n%xException{10}</pattern>
+            <pattern>%date{ISO8601} %coloredLevel %logger{15} - %message%n%xException{10}</pattern>
         </encoder>
     </appender>
 

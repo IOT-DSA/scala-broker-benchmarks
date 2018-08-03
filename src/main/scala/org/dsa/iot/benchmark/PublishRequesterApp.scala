@@ -1,6 +1,6 @@
 package org.dsa.iot.benchmark
 
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.DurationLong
 import scala.util.Random
 
 import org.dsa.iot.actors.PublishRequester
@@ -38,7 +38,7 @@ object PublishRequesterApp extends App {
   val reqInstances = props.envOrElse("requester.instances", "1").toInt
   val reqNamePrefix = props.envOrElse("requester.name", "publish-requester")
   val batchSize = props.envOrElse("requester.batch", "10").toInt
-  val timeout = props.envOrElse("requester.timeout", "1000").toInt.millis
+  val timeout = props.envOrElse("requester.timeout", "1000").toLong.millis
 
   val rspInstances = props.envOrElse("responder.instances", "1").toInt
   val rspNodeCount = props.envOrElse("responder.nodes", "10").toInt
