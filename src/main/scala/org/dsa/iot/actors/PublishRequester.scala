@@ -2,12 +2,12 @@ package org.dsa.iot.actors
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
-
-import org.dsa.iot.rpc.{ RequestMessage, ResponseMessage, SetRequest }
-
-import akka.actor.{ ActorRef, Cancellable, Props }
+import org.dsa.iot.rpc.{RequestMessage, ResponseMessage, SetRequest}
+import akka.actor.{ActorRef, Cancellable, Props}
 import org.joda.time.DateTime
 import java.util.concurrent.atomic.AtomicInteger
+
+import org.dsa.iot.util.InfluxClient
 import org.joda.time.Interval
 
 /**
@@ -15,7 +15,8 @@ import org.joda.time.Interval
  * of their nodes.
  */
 class PublishRequester(linkName: String, paths: Iterable[String], timeout: FiniteDuration,
-                       out: ActorRef, cfg: WebSocketActorConfig) extends WebSocketActor(linkName, false, true, out, cfg) {
+                       out: ActorRef, influx: InfluxClient,
+                       cfg: WebSocketActorConfig) extends WebSocketActor(linkName, LinkType.Requester, out, influx, cfg) {
   import PublishRequester._
 
   import context.dispatcher
@@ -94,7 +95,7 @@ object PublishRequester {
    * Creates a new PublishRequester props.
    */
   def props(linkName: String, paths: Iterable[String], timeout: FiniteDuration, out: ActorRef) =
-    Props(new PublishRequester(linkName, paths, timeout, out, EnvBenchmarkResponderConfig))
+    Props(new PublishRequester(linkName, paths, timeout, out, InfluxClient.getInstance, EnvBenchmarkResponderConfig))
 
   /**
    * Sent by the scheduler to initiate a request batch.

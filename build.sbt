@@ -31,10 +31,10 @@ mainClass in Compile := Some("org.dsa.iot.benchmark.BrokerConnectionTest")
 libraryDependencies ++= Seq(
   "com.typesafe.akka"       %% "akka-stream"             % AKKA_VERSION,
   "com.typesafe.akka"       %% "akka-slf4j"              % AKKA_VERSION,
-  "com.typesafe.akka"       %% "akka-actor-typed"        % "2.5.11",
   "com.typesafe.akka"       %% "akka-http"               % AKKA_HTTP_VERSION,
   "com.typesafe.play"       %% "play-json"               % "2.6.8",
   "de.heikoseeberger"       %% "akka-http-play-json"     % "1.19.0",
+  "com.paulgoldbaum"        %% "scala-influxdb-client"   % "0.6.1",
   "org.bouncycastle"         % "bcprov-jdk15on"          % "1.51",
   "com.google.guava"         % "guava"                   % "23.0",
   "ch.qos.logback"           % "logback-classic"         % "1.2.3",

@@ -2,25 +2,25 @@ package org.dsa.iot.ws
 
 import java.net.URL
 
-import org.bouncycastle.jcajce.provider.digest.SHA256
-import org.dsa.iot.handshake.{ LocalKeys, RemoteKey, UrlBase64 }
-import org.dsa.iot.rpc.DSAMessage
-import org.slf4j.LoggerFactory
-
-import akka.actor.{ Actor, ActorRef, ActorSystem, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated }
+import akka.actor.{Actor, ActorRef, ActorSystem, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{ HttpMethods, HttpRequest, RequestEntity, StatusCodes, Uri }
-import akka.http.scaladsl.model.ws.{ Message, TextMessage, WebSocketRequest }
+import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.{ ActorMaterializer, OverflowStrategy }
-import akka.stream.scaladsl.{ Flow, Keep, Sink, Source }
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import akka.stream.{ActorMaterializer, OverflowStrategy}
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
-import play.api.libs.json.{ JsValue, Json }
+import org.bouncycastle.jcajce.provider.digest.SHA256
+import org.dsa.iot.actors.LinkType
+import org.dsa.iot.handshake.{LocalKeys, RemoteKey, UrlBase64}
+import org.dsa.iot.rpc.DSAMessage
+import org.slf4j.LoggerFactory
+import play.api.libs.json.{JsValue, Json}
 
 /**
- * Establishes a connection with a DSA Broker.
- */
+  * Establishes a connection with a DSA Broker.
+  */
 class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, materializer: ActorMaterializer)
   extends PlayJsonSupport {
 
@@ -31,16 +31,16 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
   implicit private val ec = system.dispatcher
 
   /**
-   * Connects to a DSA broker and returns a connection instance.
-   */
-  def connect(dslinkName: String, brokerUrl: String, isRequester: Boolean, isResponder: Boolean,
+    * Connects to a DSA broker and returns a connection instance.
+    */
+  def connect(dslinkName: String, brokerUrl: String, dslinkType: LinkType,
               propsFunc: ActorRef => Props) = {
     val connUrl = new URL(brokerUrl)
 
     val dsId = dslinkName + "-" + keys.encodedHashedPublicKey
 
-    val connReq = ConnectionRequest(keys.encodedPublicKey, isRequester, isResponder, None, "1.1.2",
-      Some(List("json")), true)
+    val connReq = ConnectionRequest(keys.encodedPublicKey, dslinkType.isRequester, dslinkType.isResponder,
+      None, "1.1.2", Some(List("json")), true)
 
     val uri = Uri(brokerUrl).withQuery(Uri.Query("dsId" -> dsId))
 
@@ -64,8 +64,8 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
   }
 
   /**
-   * Establishes a websocket connection with a dsa broker.
-   */
+    * Establishes a websocket connection with a dsa broker.
+    */
   private def wsConnect(url: String, name: String, dsId: String, propsFunc: ActorRef => Props) = {
     val (dsaFlow, wsActor) = createWSFlow(propsFunc)
 
@@ -86,11 +86,11 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
   }
 
   /**
-   * Creates a new WebSocket flow bound to a newly created WSActor.
-   */
-  private def createWSFlow(propsFunc:  ActorRef => Props,
-                           bufferSize: Int               = 16,
-                           overflow:   OverflowStrategy  = OverflowStrategy.dropNew) = {
+    * Creates a new WebSocket flow bound to a newly created WSActor.
+    */
+  private def createWSFlow(propsFunc: ActorRef => Props,
+                           bufferSize: Int = 16,
+                           overflow: OverflowStrategy = OverflowStrategy.dropNew) = {
     import akka.actor.Status._
 
     val (toSocket, publisher) = Source.actorRef[DSAMessage](bufferSize, overflow)
@@ -118,8 +118,8 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
   }
 
   /**
-   * Builds the authorization hash to be sent to the remote broker.
-   */
+    * Builds the authorization hash to be sent to the remote broker.
+    */
   private def buildAuth(tempKey: String, salt: Array[Byte]) = {
     val remoteKey = RemoteKey.generate(keys, tempKey)
     val sharedSecret = remoteKey.sharedSecret

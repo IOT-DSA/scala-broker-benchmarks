@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, Cancellable, Props}
 import org.dsa.iot.rpc.DSAValue._
 import org.dsa.iot.rpc.StreamState._
 import org.dsa.iot.rpc._
-import org.dsa.iot.util.{EnvUtils, SimpleCache}
+import org.dsa.iot.util.{EnvUtils, InfluxClient, SimpleCache}
 import org.joda.time.DateTime
 
 import scala.concurrent.duration._
@@ -23,8 +23,8 @@ import scala.util.Random
   * - subscribe (/dataX)
   * - unsubscribe (/dataX)
   */
-class BenchmarkResponder(linkName: String, out: ActorRef, cfg: BenchmarkResponderConfig)
-  extends WebSocketActor(linkName, true, false, out, cfg) {
+class BenchmarkResponder(linkName: String, out: ActorRef, influx: InfluxClient, cfg: BenchmarkResponderConfig)
+  extends WebSocketActor(linkName, LinkType.Responder, out, influx, cfg) {
 
   import BenchmarkResponder._
   import context.dispatcher
@@ -64,6 +64,7 @@ class BenchmarkResponder(linkName: String, out: ActorRef, cfg: BenchmarkResponde
   override def receive: Receive = super.receive orElse {
     case msg: RequestMessage =>
       log.debug("{}: received {}", linkName, msg)
+      influx.write(msg)(msg2point(true))
       val responses = msg.requests flatMap processRequest
       sendToSocket(ResponseMessage(localMsgId.inc, None, responses))
 
@@ -120,7 +121,6 @@ class BenchmarkResponder(linkName: String, out: ActorRef, cfg: BenchmarkResponde
   /**
     * Outputs responder statistics.
     */
-  //TODO
   protected def reportStats(): Unit = {
     log.debug("{}: TODO: reporting stats", linkName)
   }
@@ -279,8 +279,9 @@ object BenchmarkResponder {
   /**
     * Creates a new BenchmarkResponder props.
     */
-  def props(linkName: String, out: ActorRef, cfg: BenchmarkResponderConfig = EnvBenchmarkResponderConfig) =
-    Props(new BenchmarkResponder(linkName, out, cfg))
+  def props(linkName: String, out: ActorRef, influx: InfluxClient,
+            cfg: BenchmarkResponderConfig = EnvBenchmarkResponderConfig) =
+    Props(new BenchmarkResponder(linkName, out, influx, cfg))
 }
 
 /**
