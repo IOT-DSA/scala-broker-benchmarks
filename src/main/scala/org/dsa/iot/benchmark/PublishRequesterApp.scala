@@ -2,13 +2,11 @@ package org.dsa.iot.benchmark
 
 import scala.concurrent.duration.DurationLong
 import scala.util.Random
-
-import org.dsa.iot.actors.PublishRequester
+import org.dsa.iot.actors.{LinkType, PublishRequester}
 import org.dsa.iot.handshake.LocalKeys
 import org.dsa.iot.ws.WebSocketConnector
 import org.slf4j.LoggerFactory
-
-import akka.actor.{ ActorRef, ActorSystem }
+import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
 
 /**
@@ -64,7 +62,7 @@ object PublishRequesterApp extends App {
       s"/downstream/$rspNamePrefix$rspIndex/data$nodeIndex"
     }
     val propsFunc = (out: ActorRef) => PublishRequester.props(name, paths, timeout, out)
-    connector.connect(name, brokerUrl, true, false, propsFunc)
+    connector.connect(name, brokerUrl, LinkType.Requester, propsFunc)
   }
 
   sys.addShutdownHook(connections foreach {

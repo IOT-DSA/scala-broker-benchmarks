@@ -1,27 +1,28 @@
 package org.dsa.iot.benchmark
 
-import org.dsa.iot.actors.BenchmarkResponder
+import akka.actor.{ActorRef, ActorSystem}
+import akka.stream.ActorMaterializer
+import org.dsa.iot.actors.{BenchmarkResponder, LinkType}
 import org.dsa.iot.handshake.LocalKeys
+import org.dsa.iot.util.InfluxClient
 import org.dsa.iot.ws.WebSocketConnector
 import org.slf4j.LoggerFactory
 
-import akka.actor.{ ActorRef, ActorSystem }
-import akka.stream.ActorMaterializer
-
 /**
- * Launches a set of BenchmarkResponders and establishes connections to a DSA broker.
- *
- * It accepts the following environment properties:
- *   broker.url          - DSA broker url, default "http://localhost:8080/conn"
- *   responder.instances - the number of responders to launch, default 1
- *   responder.nodes     - the number of nodes per responder, default 10
- *   responder.name      - the responder name prefix, default "benchmark-responder"
- *
- * Example: BenchmarkResponderApp -Dresponder.instances=5 -Dresponder.nodes=10
- */
+  * Launches a set of BenchmarkResponders and establishes connections to a DSA broker.
+  *
+  * It accepts the following environment properties:
+  *   broker.url          - DSA broker url, default "http://localhost:8080/conn"
+  *   responder.instances - the number of responders to launch, default 1
+  *   responder.nodes     - the number of nodes per responder, default 10
+  *   responder.name      - the responder name prefix, default "benchmark-responder"
+  *
+  * Example: BenchmarkResponderApp -Dresponder.instances=5 -Dresponder.nodes=10
+  */
 object BenchmarkResponderApp extends App {
-  import scala.util.{ Properties => props }
-  
+
+  import scala.util.{Properties => props}
+
   val log = LoggerFactory.getLogger(getClass)
 
   val brokerUrl = props.envOrElse("broker.url", "http://localhost:8080/conn")
@@ -39,14 +40,17 @@ object BenchmarkResponderApp extends App {
 
   implicit val ec = system.dispatcher
 
+  val influx = InfluxClient.getInstance
+
   val connections = (1 to instances) map { index =>
     val connector = new WebSocketConnector(LocalKeys.generate)
     val name = namePrefix + index
-    val propsFunc = (out: ActorRef) => BenchmarkResponder.props(name, out)
-    connector.connect(name, brokerUrl, false, true, propsFunc)
+    val propsFunc = (out: ActorRef) => BenchmarkResponder.props(name, out, influx)
+    connector.connect(name, brokerUrl, LinkType.Responder, propsFunc)
   }
 
-  sys.addShutdownHook(connections foreach {
-    _ foreach (_.terminate)
-  })
+  sys.addShutdownHook {
+    connections foreach (_ foreach (_.terminate))
+    influx.close()
+  }
 }

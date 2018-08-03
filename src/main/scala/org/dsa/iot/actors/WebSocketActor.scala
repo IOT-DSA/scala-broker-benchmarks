@@ -1,16 +1,17 @@
 package org.dsa.iot.actors
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable}
-import org.dsa.iot.rpc.{DSAMessage, EmptyMessage, PingMessage, PongMessage}
-import org.dsa.iot.util.EnvUtils
+import com.paulgoldbaum.influxdbclient.Point
+import org.dsa.iot.rpc.{DSAMessage, EmptyMessage, PingMessage, PongMessage, RequestMessage, ResponseMessage}
+import org.dsa.iot.util.{EnvUtils, InfluxClient}
 
 import scala.concurrent.duration._
 
 /**
   * Base class for benchmark endpoint actors.
   */
-abstract class WebSocketActor(linkName: String, isRequester: Boolean, isResponder: Boolean,
-                              out: ActorRef, cfg: WebSocketActorConfig) extends Actor with ActorLogging {
+abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRef, influx: InfluxClient,
+                              cfg: WebSocketActorConfig) extends Actor with ActorLogging {
 
   import WebSocketActor._
   import context.dispatcher
@@ -69,6 +70,30 @@ abstract class WebSocketActor(linkName: String, isRequester: Boolean, isResponde
   protected def sendToSocket(msg: DSAMessage) = {
     log.debug("{}: sending {} to WebSocket", linkName, msg)
     out ! msg
+    influx.write(msg)(msg2point(false))
+  }
+
+  /**
+    * Converts a DSAMessage instance into an InfluxDB point.
+    *
+    * @param msg
+    * @return
+    */
+  protected def msg2point(inbound: Boolean)(msg: DSAMessage) = {
+    val base = Point("message")
+      .addTag("linkName", linkName)
+      .addTag("linkType", linkType.toString)
+      .addTag("msgType", msg.getClass.getSimpleName)
+      .addTag("inbound", inbound.toString)
+      .addField("dummy", -1)
+
+    msg match {
+      case RequestMessage(_, _, requests)   => base.addField("requests", requests.size)
+      case ResponseMessage(_, _, responses) => base.addField("responses", responses.size)
+        .addField("updates", responses.map(_.updates.getOrElse(Nil).size).sum)
+      case _                                =>
+        base
+    }
   }
 }
 
