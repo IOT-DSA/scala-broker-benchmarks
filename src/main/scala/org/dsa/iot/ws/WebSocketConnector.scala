@@ -78,7 +78,7 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
 
     upgradeResponse.map { upgrade =>
       if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-        log.info(s"[$name] web socket connection established to {}", url)
+        log.info(s"[$name]: web socket connection established to {}", url)
         DSAConnection(wsActor)
       } else
         throw new RuntimeException(s"Connection failed: ${upgrade.response.status}")

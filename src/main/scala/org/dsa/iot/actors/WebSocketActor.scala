@@ -18,26 +18,28 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
 
   protected val localMsgId = new IntCounter(1)
 
+  protected val scheduler = context.system.scheduler
+
   private var statsJob: Cancellable = _
 
   /**
     * Schedules a stats job.
     */
   override def preStart: Unit = {
-    log.debug("{}: scheduling stats reporting at {}", linkName, cfg.statsInterval)
-    statsJob = context.system.scheduler.schedule(cfg.statsInterval, cfg.statsInterval, self, StatsTick)
+    log.debug("[{}]: scheduling stats reporting at {}", linkName, cfg.statsInterval)
+    statsJob = scheduler.schedule(cfg.statsInterval, cfg.statsInterval, self, StatsTick)
 
-    log.info("{}: started", linkName)
+    log.info("[{}]: started", linkName)
   }
 
   /**
     * Stops the stats job.
     */
   override def postStop: Unit = {
-    log.debug("{}: canceling stats scheduler", linkName)
+    log.debug("[{}]: canceling stats scheduler", linkName)
     statsJob.cancel
 
-    log.info("{}: stopped", linkName)
+    log.info("[{}]: stopped", linkName)
   }
 
   /**
@@ -47,9 +49,9 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
     */
   def receive: Receive = {
     case EmptyMessage        =>
-      log.debug("{}: received empty message from WebSocket, ignoring...", linkName)
+      log.debug("[{}]: received empty message from WebSocket, ignoring...", linkName)
     case PingMessage(msg, _) =>
-      log.debug("{}: received ping from WebSocket with msg={}, acking...", linkName, msg)
+      log.debug("[{}]: received ping from WebSocket with msg={}, acking...", linkName, msg)
       sendAck(msg)
     case StatsTick           => reportStats
   }
@@ -57,7 +59,9 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
   /**
     * Overridden by subclasses to report stats data.
     */
-  protected def reportStats(): Unit
+  protected def reportStats(): Unit = {
+    log.debug("[{}]: TODO: reporting stats", linkName)
+  }
 
   /**
     * Sends an ACK back to the client.
@@ -68,7 +72,7 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
     * Sends a DSAMessage to a WebSocket connection.
     */
   protected def sendToSocket(msg: DSAMessage) = {
-    log.debug("{}: sending {} to WebSocket", linkName, msg)
+    log.debug("[{}]: sending {} to WebSocket", linkName, msg)
     out ! msg
     influx.write(msg)(msg2point(false))
   }

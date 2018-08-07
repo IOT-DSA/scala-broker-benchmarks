@@ -22,6 +22,11 @@ import scala.util.Random
   * - invoke (/dataX/incCounter and /dataX/resetCounter)
   * - subscribe (/dataX)
   * - unsubscribe (/dataX)
+  *
+  * @param linkName
+  * @param out
+  * @param influx
+  * @param cfg
   */
 class BenchmarkResponder(linkName: String, out: ActorRef, influx: InfluxClient, cfg: BenchmarkResponderConfig)
   extends WebSocketActor(linkName, LinkType.Responder, out, influx, cfg) {
@@ -36,14 +41,17 @@ class BenchmarkResponder(linkName: String, out: ActorRef, influx: InfluxClient, 
 
   private val actionCache = new SimpleCache[String, Action](100, 1)
 
-  private var autoIncJob: Cancellable = _
+  private var autoIncJob: Option[Cancellable] = None
 
   /**
     * Schedules the auto-increment job.
     */
   override def preStart: Unit = {
-    log.debug("{}: scheduling auto-increments at {}", linkName, cfg.autoIncrementInterval)
-    autoIncJob = context.system.scheduler.schedule(cfg.autoIncrementInterval, cfg.autoIncrementInterval, self, AutoIncTick)
+    log.info("[{}]: starting with {} nodes, auto-increment config {}", linkName, cfg.nodeCount, cfg.autoIncConfig)
+
+    autoIncJob = cfg.autoIncConfig map { ai =>
+      scheduler.schedule(ai.interval, ai.interval, self, AutoIncTick)
+    }
 
     super.preStart
   }
@@ -52,8 +60,10 @@ class BenchmarkResponder(linkName: String, out: ActorRef, influx: InfluxClient, 
     * Stops the auto-increment job.
     */
   override def postStop: Unit = {
-    log.debug("{}: canceling auto-increments", linkName)
-    autoIncJob.cancel
+    autoIncJob foreach { job =>
+      log.debug("{}: canceling auto-increments", linkName)
+      job.cancel
+    }
 
     super.postStop
   }
@@ -62,22 +72,24 @@ class BenchmarkResponder(linkName: String, out: ActorRef, influx: InfluxClient, 
     * Handles incoming messages.
     */
   override def receive: Receive = super.receive orElse {
+
     case msg: RequestMessage =>
-      log.debug("{}: received {}", linkName, msg)
+      log.debug("[{}]: received {}", linkName, msg)
       influx.write(msg)(msg2point(true))
       val responses = msg.requests flatMap processRequest
       sendToSocket(ResponseMessage(localMsgId.inc, None, responses))
 
     case AutoIncTick =>
-      log.debug("{}: auto-incrementing {} nodes", linkName, cfg.autoIncrementNodes)
-      val updates = (1 to cfg.autoIncrementNodes) flatMap { _ =>
+      val aiNodes = cfg.autoIncConfig.map(_.nodes).getOrElse(0)
+      log.debug("[{}]: auto-incrementing {} nodes", linkName, aiNodes)
+      val updates = (1 to aiNodes) flatMap { _ =>
         val index = Random.nextInt(cfg.nodeCount)
         incCounter(index + 1)
       } flatMap (_.updates.getOrElse(Nil))
       val response = DSAResponse(0, Some(Open), Some(updates.toList))
       sendToSocket(ResponseMessage(localMsgId.inc, None, List(response)))
 
-    case msg => log.warning("{}: received unknown message - {}", linkName, msg)
+    case msg => log.warning("[{}]: received unknown message - {}", linkName, msg)
   }
 
   /**
@@ -116,13 +128,6 @@ class BenchmarkResponder(linkName: String, out: ActorRef, influx: InfluxClient, 
     case CloseRequest(rid) =>
       log.debug("{}: closing request {}", linkName, rid)
       List(emptyResponse(rid))
-  }
-
-  /**
-    * Outputs responder statistics.
-    */
-  protected def reportStats(): Unit = {
-    log.debug("{}: TODO: reporting stats", linkName)
   }
 
   /**
@@ -285,6 +290,14 @@ object BenchmarkResponder {
 }
 
 /**
+  * Auto-increment configuration.
+  *
+  * @param interval interval for incCounter auto-invoke
+  * @param nodes    node count to auto invoke incCounter on each time `interval` passes.
+  */
+case class AutoIncrementConfig(interval: FiniteDuration, nodes: Int)
+
+/**
   * BenchmarkResponder configuration.
   */
 trait BenchmarkResponderConfig extends WebSocketActorConfig {
@@ -295,14 +308,11 @@ trait BenchmarkResponderConfig extends WebSocketActorConfig {
   def nodeCount: Int
 
   /**
-    * @return interval for incCounter auto-invoke
+    * Auto-increment configuration (if None that means no auto-increment).
+    *
+    * @return
     */
-  def autoIncrementInterval: FiniteDuration
-
-  /**
-    * @return node count to auto invoke incCounter on each time [[autoIncrementInterval]] passes.
-    */
-  def autoIncrementNodes: Int
+  def autoIncConfig: Option[AutoIncrementConfig]
 }
 
 /**
@@ -310,10 +320,10 @@ trait BenchmarkResponderConfig extends WebSocketActorConfig {
   */
 object EnvBenchmarkResponderConfig extends EnvWebSocketActorConfig with BenchmarkResponderConfig {
 
-  override def nodeCount: Int = EnvUtils.getInt("responder.nodes", 10)
+  val nodeCount: Int = EnvUtils.getInt("responder.nodes", 10)
 
-  override def autoIncrementInterval: FiniteDuration =
-    EnvUtils.getMillis("responder.autoinc.interval", 1 second)
-
-  override def autoIncrementNodes: Int = EnvUtils.getInt("responder.autoinc.nodes", 10)
+  val autoIncConfig: Option[AutoIncrementConfig] = for {
+    interval <- EnvUtils.getMillisOption("responder.autoinc.interval")
+    nodes <- EnvUtils.getIntOption("responder.autoinc.nodes")
+  } yield AutoIncrementConfig(interval, nodes)
 }
