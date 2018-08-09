@@ -25,6 +25,10 @@ import scala.util.Random
   *   responder.name      - the responder name prefix, default "benchmark-responder"
   *
   * Example: BenchmarkResponderApp -Dresponder.instances=5 -Dresponder.nodes=10
+  *
+  * Note: Since the responders' target nodes are chosen randomly, there is a chance of duplicate
+  * subscription/invocation paths in each requester's configuration, hence the total number of unique target
+  * nodes per responder could be less than `requester.batch`.
   */
 object BenchmarkRequesterApp extends App {
 
@@ -59,7 +63,7 @@ object BenchmarkRequesterApp extends App {
       val nodeIndex = Random.nextInt(rspNodeCount) + 1
       s"/downstream/$rspNamePrefix$rspIndex/data$nodeIndex"
     }
-    val propsFunc = (out: ActorRef) => BenchmarkRequester.props(name, out, influx, paths)
+    val propsFunc = (out: ActorRef) => BenchmarkRequester.props(name, out, influx, paths.toSet)
     connector.connect(name, brokerUrl, LinkType.Requester, propsFunc)
   }
 

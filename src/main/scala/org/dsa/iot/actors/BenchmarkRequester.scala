@@ -79,7 +79,7 @@ class BenchmarkRequester(linkName: String, out: ActorRef, influx: InfluxClient, 
 
     case msg: ResponseMessage =>
       log.debug("[{}]: received {}", linkName, msg)
-      influx.write(msg)(msg2point(true))
+      reportInboundMessage(msg)
 
     case SendBatch =>
       val requests = invPaths map (InvokeRequest(ridGen.inc, _))

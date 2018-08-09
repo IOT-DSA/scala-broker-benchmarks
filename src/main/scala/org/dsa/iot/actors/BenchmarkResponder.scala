@@ -75,7 +75,7 @@ class BenchmarkResponder(linkName: String, out: ActorRef, influx: InfluxClient, 
 
     case msg: RequestMessage =>
       log.debug("[{}]: received {}", linkName, msg)
-      influx.write(msg)(msg2point(true))
+      reportInboundMessage(msg)
       val responses = msg.requests flatMap processRequest
       sendToSocket(ResponseMessage(localMsgId.inc, None, responses))
 
@@ -86,8 +86,10 @@ class BenchmarkResponder(linkName: String, out: ActorRef, influx: InfluxClient, 
         val index = Random.nextInt(cfg.nodeCount)
         incCounter(index + 1)
       } flatMap (_.updates.getOrElse(Nil))
-      val response = DSAResponse(0, Some(Open), Some(updates.toList))
-      sendToSocket(ResponseMessage(localMsgId.inc, None, List(response)))
+      if (!updates.isEmpty) {
+        val response = DSAResponse(0, Some(Open), Some(updates.toList))
+        sendToSocket(ResponseMessage(localMsgId.inc, None, List(response)))
+      }
 
     case msg => log.warning("[{}]: received unknown message - {}", linkName, msg)
   }
