@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
 import org.dsa.iot.actors.{BenchmarkResponder, LinkType}
 import org.dsa.iot.handshake.LocalKeys
-import org.dsa.iot.util.InfluxClient
+import org.dsa.iot.util.{EnvUtils, InfluxClient}
 import org.dsa.iot.ws.WebSocketConnector
 import org.slf4j.LoggerFactory
 
@@ -21,15 +21,13 @@ import org.slf4j.LoggerFactory
   */
 object BenchmarkResponderApp extends App {
 
-  import scala.util.{Properties => props}
-
   val log = LoggerFactory.getLogger(getClass)
 
-  val brokerUrl = props.envOrElse("broker.url", "http://localhost:8080/conn")
+  val brokerUrl = EnvUtils.getString("broker.url", "http://localhost:8080/conn")
 
-  val instances = props.envOrElse("responder.instances", "1").toInt
-  val nodeCount = props.envOrElse("responder.nodes", "10").toInt
-  val namePrefix = props.envOrElse("responder.name", "benchmark-responder")
+  val instances = EnvUtils.getInt("responder.instances", 1)
+  val nodeCount = EnvUtils.getInt("responder.nodes", 10)
+  val namePrefix = EnvUtils.getString("responder.name", "benchmark-responder")
 
   log.info(
     "Launching {} responder instance(s), {} nodes each under name prefix '{}'",

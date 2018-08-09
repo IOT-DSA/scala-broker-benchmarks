@@ -36,7 +36,7 @@ class InfluxClient(host: String, port: Int, dbName: String) {
     db.write(cnv(value), precision, consistency, retention)
 
   /**
-    * Converts the supplied list of values into InfluxDB points and writes them to the database.
+    * Converts the supplied value into InfluxDB points and writes them to the database.
     *
     * @param values
     * @param retention
@@ -46,10 +46,10 @@ class InfluxClient(host: String, port: Int, dbName: String) {
     * @tparam T
     * @return
     */
-  def bulkWrite[T](values: Seq[T], retention: String = null)(implicit cnv: T => Point,
-                                                             precision: Precision = null,
-                                                             consistency: Consistency = null) =
-    db.bulkWrite(values map cnv, precision, consistency, retention)
+  def bulkWrite[T](values: T, retention: String = null)(implicit cnv: T => Seq[Point],
+                                                        precision: Precision = null,
+                                                        consistency: Consistency = null) =
+    db.bulkWrite(cnv(values), precision, consistency, retention)
 
   /**
     * Closes the InfluxDB connection.
