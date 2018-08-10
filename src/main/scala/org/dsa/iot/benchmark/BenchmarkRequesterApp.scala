@@ -2,7 +2,7 @@ package org.dsa.iot.benchmark
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
-import org.dsa.iot.actors.{BenchmarkRequester, LinkType}
+import org.dsa.iot.actors.{BenchmarkRequester, LinkType, StatsCollector}
 import org.dsa.iot.handshake.LocalKeys
 import org.dsa.iot.util.{EnvUtils, InfluxClient}
 import org.dsa.iot.ws.WebSocketConnector
@@ -55,6 +55,8 @@ object BenchmarkRequesterApp extends App {
 
   val influx = InfluxClient.getInstance
 
+  val collector = system.actorOf(StatsCollector.props(influx, false))
+
   val connections = (1 to reqInstances) map { index =>
     val connector = new WebSocketConnector(LocalKeys.generate)
     val name = reqNamePrefix + index
@@ -63,7 +65,7 @@ object BenchmarkRequesterApp extends App {
       val nodeIndex = Random.nextInt(rspNodeCount) + 1
       s"/downstream/$rspNamePrefix$rspIndex/data$nodeIndex"
     }
-    val propsFunc = (out: ActorRef) => BenchmarkRequester.props(name, out, influx, paths.toSet)
+    val propsFunc = (out: ActorRef) => BenchmarkRequester.props(name, out, collector, paths.toSet)
     connector.connect(name, brokerUrl, LinkType.Requester, propsFunc)
   }
 
