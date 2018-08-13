@@ -5,8 +5,8 @@ import java.net.URL
 import akka.actor.{Actor, ActorRef, ActorSystem, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.stream.{ActorMaterializer, OverflowStrategy}
@@ -28,7 +28,7 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
 
   implicit private val connReqFormat = Json.format[ConnectionRequest]
 
-  implicit private val ec = system.dispatcher
+  implicit val ec = system.dispatchers.lookup("blocking-io-dispatcher")
 
   /**
     * Connects to a DSA broker and returns a connection instance.
@@ -46,12 +46,13 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
 
     val fBody = Marshal(connReq).to[RequestEntity]
     val frsp = fBody.flatMap { body =>
-      log.debug("Connecting to {}", brokerUrl)
+      log.info("[{}]: connecting to {}", dslinkName: Any, brokerUrl: Any)
       val req = HttpRequest(method = HttpMethods.POST, uri = uri, entity = body)
       Http().singleRequest(req)
     }
 
     frsp flatMap (rsp => Unmarshal(rsp.entity).to[JsValue]) flatMap { serverConfig =>
+      log.info("[{}]: HTTP response received", dslinkName)
       val tempKey = (serverConfig \ "tempKey").as[String]
       val wsUri = (serverConfig \ "wsUri").as[String]
       val salt = (serverConfig \ "salt").as[String].getBytes("UTF-8")
@@ -67,7 +68,7 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
     * Establishes a websocket connection with a dsa broker.
     */
   private def wsConnect(url: String, name: String, dsId: String, propsFunc: ActorRef => Props) = {
-    val (dsaFlow, wsActor) = createWSFlow(propsFunc)
+    val (dsaFlow, wsActor) = createWSFlow(name, propsFunc)
 
     val inFlow = Flow[Message].collect {
       case TextMessage.Strict(s) => Json.parse(s).as[DSAMessage]
@@ -78,7 +79,7 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
 
     upgradeResponse.map { upgrade =>
       if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-        log.info(s"[$name]: web socket connection established to {}", url)
+        log.info("[{}]: web socket connection established to {}", name: Any, url: Any)
         DSAConnection(wsActor)
       } else
         throw new RuntimeException(s"Connection failed: ${upgrade.response.status}")
@@ -88,7 +89,8 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
   /**
     * Creates a new WebSocket flow bound to a newly created WSActor.
     */
-  private def createWSFlow(propsFunc: ActorRef => Props,
+  private def createWSFlow(linkName: String,
+                           propsFunc: ActorRef => Props,
                            bufferSize: Int = 16,
                            overflow: OverflowStrategy = OverflowStrategy.dropNew) = {
     import akka.actor.Status._
@@ -100,9 +102,16 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
       val wsActor = context.watch(context.actorOf(propsFunc(toSocket), "wsActor"))
 
       def receive = {
-        case Success(_) | Failure(_) => wsActor ! PoisonPill
-        case Terminated(_)           => context.stop(self)
-        case other                   => wsActor ! other
+        case Success(result) =>
+          log.warn(s"[$linkName]: connection terminated with {}, stopping WebSocket actor", result)
+          wsActor ! PoisonPill
+        case Failure(error)  =>
+          log.warn(s"[$linkName]: connection terminated with {}, stopping WebSocket actor", error)
+          wsActor ! PoisonPill
+        case Terminated(_)   =>
+          log.warn("[{}]: WebSocket actor terminated, stopping supervisor", linkName)
+          context.stop(self)
+        case other           => wsActor ! other
       }
 
       override def supervisorStrategy = OneForOneStrategy() {
