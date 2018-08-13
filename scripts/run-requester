@@ -4,12 +4,10 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 env \
   "broker.url=http://localhost:8080/conn" \
-  "requester.instances=20" \
-  "requester.name=bm-req" \
+  "requester.range=1-10" \
   "requester.subscribe=true" \
   "requester.batch=10" \
   "requester.timeout=1000" \
-  "responder.instances=20" \
-  "responder.nodes=100" \
-  "responder.name=bm-rsp" \
+  "responder.range=1-10" \
+  "responder.nodes=10" \
   $DIR/../target/universal/stage/bin/benchmark-requester-app

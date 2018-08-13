@@ -15,6 +15,7 @@ import scala.concurrent.duration.FiniteDuration
   *
   * It accepts the following environment properties:
   *   broker.url                     - DSA broker url, default [[DefaultBrokerUrl]]
+  *
   *   responder.range                - the responder index range in x-y format, default 1-1
   *   responder.nodes                - the number of nodes per responder, default 10
   *   responder.autoinc.interval     - the auto increment interval (optional, default is no auto-inc)

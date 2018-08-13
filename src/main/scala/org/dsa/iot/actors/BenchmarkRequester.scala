@@ -2,7 +2,6 @@ package org.dsa.iot.actors
 
 import akka.actor.{ActorRef, Cancellable, Props}
 import org.dsa.iot.rpc._
-import org.dsa.iot.util.EnvUtils
 
 import scala.concurrent.duration._
 
@@ -30,10 +29,10 @@ class BenchmarkRequester(linkName: String, out: ActorRef, collector: ActorRef, p
   private var invokeJob: Option[Cancellable] = None
 
   /**
-    * Schedules an invocation job.
+    * Subscribes for updates and schedules an invocation job.
     */
   override def preStart: Unit = {
-    log.info("[{}]: starting with {} paths, invoke timeout {}", linkName, paths.size, cfg.timeout)
+    log.debug("[{}]: starting requester")
 
     // subscribe for node updates
     if (cfg.subscribe) {
@@ -42,13 +41,15 @@ class BenchmarkRequester(linkName: String, out: ActorRef, collector: ActorRef, p
       }
       val subReq = SubscribeRequest(ridGen.inc, subPaths.toList)
       sendToSocket(RequestMessage(localMsgId.inc, None, List(subReq)))
-      log.info("[{}]: subscribed to {} paths", linkName, paths.size)
+      log.debug("[{}]: subscribed to {} paths", linkName, paths.size)
     }
 
     // schedule action invocation
     invokeJob = cfg.timeout map (to => scheduler.schedule(to, to, self, SendBatch))
 
-    super.preStart
+    log.info("[{}]: started with {} paths{}, {}", linkName, paths.size,
+      if (cfg.subscribe) " with subscription" else " without subscription",
+      cfg.timeout.map("invoke timeout of " + _.toString).getOrElse("no invokes"))
   }
 
   /**
@@ -110,8 +111,7 @@ object BenchmarkRequester {
     * @param cfg
     * @return
     */
-  def props(linkName: String, out: ActorRef, collector: ActorRef, paths: Iterable[String],
-            cfg: BenchmarkRequesterConfig = EnvBenchmarkRequesterConfig) =
+  def props(linkName: String, out: ActorRef, collector: ActorRef, paths: Iterable[String], cfg: BenchmarkRequesterConfig) =
     Props(new BenchmarkRequester(linkName, out, collector, paths, cfg))
 }
 
@@ -129,14 +129,4 @@ trait BenchmarkRequesterConfig extends WebSocketActorConfig {
     * @return whether requester must subscribe to node updates initially.
     */
   def subscribe: Boolean
-}
-
-/**
-  * BenchmarkRequesterConfig implementation based on environment properties.
-  */
-object EnvBenchmarkRequesterConfig extends EnvWebSocketActorConfig with BenchmarkRequesterConfig {
-
-  val timeout: Option[FiniteDuration] = EnvUtils.getMillisOption("requester.timeout")
-
-  val subscribe: Boolean = EnvUtils.getBoolean("requester.subscribe", false)
 }
