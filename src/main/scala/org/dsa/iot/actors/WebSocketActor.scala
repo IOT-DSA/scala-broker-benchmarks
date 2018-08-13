@@ -15,12 +15,7 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
   protected val scheduler = context.system.scheduler
 
   /**
-    * Schedules a stats job.
-    */
-  override def preStart: Unit = log.info("[{}]: started", linkName)
-
-  /**
-    * Stops the stats job.
+    * Logs the actor stoppage.
     */
   override def postStop: Unit = log.info("[{}]: stopped", linkName)
 

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+env \
+  "broker.url=http://localhost:8080/conn" \
+  $DIR/../target/universal/stage/bin/scala-broker-benchmarks

@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, Cancellable, Props}
 import org.dsa.iot.rpc.DSAValue._
 import org.dsa.iot.rpc.StreamState._
 import org.dsa.iot.rpc._
-import org.dsa.iot.util.{EnvUtils, SimpleCache}
+import org.dsa.iot.util.SimpleCache
 import org.joda.time.DateTime
 
 import scala.concurrent.duration._
@@ -46,13 +46,15 @@ class BenchmarkResponder(linkName: String, out: ActorRef, collector: ActorRef, c
     * Schedules the auto-increment job.
     */
   override def preStart: Unit = {
-    log.info("[{}]: starting with {} nodes, auto-increment config {}", linkName, cfg.nodeCount, cfg.autoIncConfig)
+    log.debug("[{}]: starting responder")
 
-    autoIncJob = cfg.autoIncConfig map { ai =>
-      scheduler.schedule(ai.interval, ai.interval, self, AutoIncTick)
+    autoIncJob = cfg.autoIncInterval map { interval =>
+      scheduler.schedule(interval, interval, self, AutoIncTick)
     }
 
-    super.preStart
+    log.info("[{}]: started with {} nodes, {}",
+      linkName, cfg.nodeCount,
+      cfg.autoIncInterval.map("auto-increment interval of " + _.toString).getOrElse("no auto-increment"))
   }
 
   /**
@@ -79,7 +81,6 @@ class BenchmarkResponder(linkName: String, out: ActorRef, collector: ActorRef, c
       sendToSocket(ResponseMessage(localMsgId.inc, None, responses))
 
     case AutoIncTick =>
-      // TODO auto-inc node count is ignored, will be removed
       val updates = (1 to cfg.nodeCount) flatMap { index =>
         incCounter(index)
       } flatMap (_.updates.getOrElse(Nil))
@@ -283,18 +284,9 @@ object BenchmarkResponder {
   /**
     * Creates a new BenchmarkResponder props.
     */
-  def props(linkName: String, out: ActorRef, collector: ActorRef,
-            cfg: BenchmarkResponderConfig = EnvBenchmarkResponderConfig) =
+  def props(linkName: String, out: ActorRef, collector: ActorRef, cfg: BenchmarkResponderConfig) =
     Props(new BenchmarkResponder(linkName, out, collector, cfg))
 }
-
-/**
-  * Auto-increment configuration.
-  *
-  * @param interval interval for incCounter auto-invoke
-  * @param nodes    node count to auto invoke incCounter on each time `interval` passes.
-  */
-case class AutoIncrementConfig(interval: FiniteDuration, nodes: Int)
 
 /**
   * BenchmarkResponder configuration.
@@ -307,22 +299,9 @@ trait BenchmarkResponderConfig extends WebSocketActorConfig {
   def nodeCount: Int
 
   /**
-    * Auto-increment configuration (if None that means no auto-increment).
+    * Auto-increment interval (if None that means no auto-increment).
     *
     * @return
     */
-  def autoIncConfig: Option[AutoIncrementConfig]
-}
-
-/**
-  * BenchmarkResponderConfig implementation based on environment properties.
-  */
-object EnvBenchmarkResponderConfig extends EnvWebSocketActorConfig with BenchmarkResponderConfig {
-
-  val nodeCount: Int = EnvUtils.getInt("responder.nodes", 10)
-
-  val autoIncConfig: Option[AutoIncrementConfig] = for {
-    interval <- EnvUtils.getMillisOption("responder.autoinc.interval")
-    nodes <- EnvUtils.getIntOption("responder.autoinc.nodes")
-  } yield AutoIncrementConfig(interval, nodes)
+  def autoIncInterval: Option[FiniteDuration]
 }

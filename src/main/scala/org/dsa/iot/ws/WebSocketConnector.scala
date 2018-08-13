@@ -2,7 +2,7 @@ package org.dsa.iot.ws
 
 import java.net.URL
 
-import akka.actor.{Actor, ActorRef, ActorSystem, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated}
+import akka.actor._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
@@ -46,13 +46,13 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
 
     val fBody = Marshal(connReq).to[RequestEntity]
     val frsp = fBody.flatMap { body =>
-      log.info("[{}]: connecting to {}", dslinkName: Any, brokerUrl: Any)
+      log.debug("[{}]: connecting to {}", dslinkName: Any, brokerUrl: Any)
       val req = HttpRequest(method = HttpMethods.POST, uri = uri, entity = body)
       Http().singleRequest(req)
     }
 
     frsp flatMap (rsp => Unmarshal(rsp.entity).to[JsValue]) flatMap { serverConfig =>
-      log.info("[{}]: HTTP response received", dslinkName)
+      log.debug("[{}]: handshake complete", dslinkName)
       val tempKey = (serverConfig \ "tempKey").as[String]
       val wsUri = (serverConfig \ "wsUri").as[String]
       val salt = (serverConfig \ "salt").as[String].getBytes("UTF-8")
@@ -79,7 +79,7 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
 
     upgradeResponse.map { upgrade =>
       if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-        log.info("[{}]: web socket connection established to {}", name: Any, url: Any)
+        log.debug("[{}]: web socket connection established to {}", name: Any, url: Any)
         DSAConnection(wsActor)
       } else
         throw new RuntimeException(s"Connection failed: ${upgrade.response.status}")
@@ -99,7 +99,8 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
       .toMat(Sink.asPublisher(false))(Keep.both).run()(materializer)
 
     val fromSocket = system.actorOf(Props(new Actor {
-      val wsActor = context.watch(context.actorOf(propsFunc(toSocket), "wsActor"))
+      val wsActor = context.watch(
+        context.actorOf(propsFunc(toSocket).withDispatcher("blocking-io-dispatcher"), "wsActor"))
 
       def receive = {
         case Success(result) =>
@@ -117,7 +118,7 @@ class WebSocketConnector(keys: LocalKeys)(implicit system: ActorSystem, material
       override def supervisorStrategy = OneForOneStrategy() {
         case _ => SupervisorStrategy.Stop
       }
-    }))
+    }).withDispatcher("blocking-io-dispatcher"))
 
     val flow = Flow.fromSinkAndSource[DSAMessage, DSAMessage](
       Sink.actorRef(fromSocket, Success(())),
