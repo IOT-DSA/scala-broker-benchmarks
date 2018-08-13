@@ -34,7 +34,7 @@ object BenchmarkRequesterApp extends App {
 
   val log = LoggerFactory.getLogger(getClass)
 
-  val brokerUrl = EnvUtils.getString("broker.url", DefaultBrokerUrl)
+  val brokerUrl = randomBrokerUrl
 
   val reqIndexRange = parseRange(EnvUtils.getString("requester.range", "1-1"))
   val batchSize = EnvUtils.getInt("requester.batch", 10)
