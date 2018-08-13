@@ -18,7 +18,7 @@ object ConnectionTest extends App {
 
   val log = LoggerFactory.getLogger(getClass)
 
-  val brokerUrl = EnvUtils.getString("broker.url", DefaultBrokerUrl)
+  val brokerUrl = randomBrokerUrl
 
   log.info("Launching a connection test for broker at {}", brokerUrl)
 

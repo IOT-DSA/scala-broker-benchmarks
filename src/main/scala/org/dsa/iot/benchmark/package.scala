@@ -1,5 +1,9 @@
 package org.dsa.iot
 
+import org.dsa.iot.util.EnvUtils
+
+import scala.util.Random
+
 /**
   * Constants and helper methods for benchmarks
   */
@@ -46,5 +50,16 @@ package object benchmark {
     val bounds = str.split('-')
     require(bounds.size == 2)
     bounds(0).toInt to bounds(1).toInt
+  }
+
+  /**
+    * @return a random broker url from the list supplied in system environment properties.
+    */
+  def randomBrokerUrl = {
+    val urls = EnvUtils.getStringList("broker.url")
+    if (!urls.isEmpty)
+      urls(Random.nextInt(urls.size))
+    else
+      DefaultBrokerUrl
   }
 }

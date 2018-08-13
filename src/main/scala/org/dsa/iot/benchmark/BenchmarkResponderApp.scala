@@ -24,7 +24,7 @@ object BenchmarkResponderApp extends App {
 
   val log = LoggerFactory.getLogger(getClass)
 
-  val brokerUrl = EnvUtils.getString("broker.url", DefaultBrokerUrl)
+  val brokerUrl = randomBrokerUrl
 
   val indexRange = parseRange(EnvUtils.getString("responder.range", "1-1"))
   val nodeCount = EnvUtils.getInt("responder.nodes", 10)

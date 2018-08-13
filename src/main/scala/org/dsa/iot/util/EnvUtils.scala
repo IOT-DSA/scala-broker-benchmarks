@@ -9,6 +9,8 @@ object EnvUtils {
 
   import scala.util.{Properties => props}
 
+  /* optional */
+
   def getStringOption(name: String) = props.envOrNone(name)
 
   def getIntOption(name: String) = props.envOrNone(name) map (_.toInt)
@@ -19,6 +21,8 @@ object EnvUtils {
 
   def getMillisOption(name: String) = getLongOption(name) map (_.millis)
 
+  /* with default */
+
   def getString(name: String, alt: String) = getStringOption(name) getOrElse alt
 
   def getInt(name: String, alt: Int) = getIntOption(name) getOrElse alt
@@ -28,4 +32,19 @@ object EnvUtils {
   def getBoolean(name: String, alt: Boolean) = getBooleanOption(name) getOrElse alt
 
   def getMillis(name: String, alt: FiniteDuration) = getMillisOption(name) getOrElse alt
+
+  /* lists */
+
+  def getStringList(name: String, separator: String = ",") = getList(name, identity[String], separator)
+
+  def getIntList(name: String, separator: String = ",") = getList(name, _.toInt, separator)
+
+  def getLongList(name: String, separator: String = ",") = getList(name, _.toLong, separator)
+
+  def getBooleanList(name: String, separator: String = ",") = getList(name, _.toBoolean, separator)
+
+  private def getList[T](name: String, parser: String => T,
+                         separator: String = ",") = getStringOption(name) map {
+    _.split(separator).map(parser).toList
+  } getOrElse Nil
 }
