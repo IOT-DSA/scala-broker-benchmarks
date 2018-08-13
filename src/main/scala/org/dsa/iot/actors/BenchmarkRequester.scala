@@ -2,7 +2,7 @@ package org.dsa.iot.actors
 
 import akka.actor.{ActorRef, Cancellable, Props}
 import org.dsa.iot.rpc._
-import org.dsa.iot.util.{EnvUtils, InfluxClient}
+import org.dsa.iot.util.EnvUtils
 
 import scala.concurrent.duration._
 
@@ -12,13 +12,13 @@ import scala.concurrent.duration._
   *
   * @param linkName
   * @param out
-  * @param influx
+  * @param collector
   * @param paths
   * @param cfg
   */
-class BenchmarkRequester(linkName: String, out: ActorRef, influx: InfluxClient, paths: Iterable[String],
+class BenchmarkRequester(linkName: String, out: ActorRef, collector: ActorRef, paths: Iterable[String],
                          cfg: BenchmarkRequesterConfig)
-  extends WebSocketActor(linkName, LinkType.Requester, out, influx, cfg) {
+  extends WebSocketActor(linkName, LinkType.Requester, out, collector, cfg) {
 
   import BenchmarkRequester._
   import context.dispatcher
@@ -79,7 +79,7 @@ class BenchmarkRequester(linkName: String, out: ActorRef, influx: InfluxClient, 
 
     case msg: ResponseMessage =>
       log.debug("[{}]: received {}", linkName, msg)
-      reportInboundMessage(msg)
+      logInboundMessage(msg)
 
     case SendBatch =>
       val requests = invPaths map (InvokeRequest(ridGen.inc, _))
@@ -105,14 +105,14 @@ object BenchmarkRequester {
     *
     * @param linkName
     * @param out
-    * @param influx
+    * @param collector
     * @param paths
     * @param cfg
     * @return
     */
-  def props(linkName: String, out: ActorRef, influx: InfluxClient, paths: Iterable[String],
+  def props(linkName: String, out: ActorRef, collector: ActorRef, paths: Iterable[String],
             cfg: BenchmarkRequesterConfig = EnvBenchmarkRequesterConfig) =
-    Props(new BenchmarkRequester(linkName, out, influx, paths, cfg))
+    Props(new BenchmarkRequester(linkName, out, collector, paths, cfg))
 }
 
 /**

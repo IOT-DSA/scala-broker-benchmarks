@@ -4,11 +4,10 @@ import akka.actor.{ActorRef, Cancellable, Props}
 import org.dsa.iot.rpc.DSAValue._
 import org.dsa.iot.rpc.StreamState._
 import org.dsa.iot.rpc._
-import org.dsa.iot.util.{EnvUtils, InfluxClient, SimpleCache}
+import org.dsa.iot.util.{EnvUtils, SimpleCache}
 import org.joda.time.DateTime
 
 import scala.concurrent.duration._
-import scala.util.Random
 
 /**
   * A sample responder that creates a list of nodes with names data1, data2, etc. with the initial value of 0.
@@ -25,11 +24,11 @@ import scala.util.Random
   *
   * @param linkName
   * @param out
-  * @param influx
+  * @param collector
   * @param cfg
   */
-class BenchmarkResponder(linkName: String, out: ActorRef, influx: InfluxClient, cfg: BenchmarkResponderConfig)
-  extends WebSocketActor(linkName, LinkType.Responder, out, influx, cfg) {
+class BenchmarkResponder(linkName: String, out: ActorRef, collector: ActorRef, cfg: BenchmarkResponderConfig)
+  extends WebSocketActor(linkName, LinkType.Responder, out, collector, cfg) {
 
   import BenchmarkResponder._
   import context.dispatcher
@@ -75,16 +74,14 @@ class BenchmarkResponder(linkName: String, out: ActorRef, influx: InfluxClient, 
 
     case msg: RequestMessage =>
       log.debug("[{}]: received {}", linkName, msg)
-      reportInboundMessage(msg)
+      logInboundMessage(msg)
       val responses = msg.requests flatMap processRequest
       sendToSocket(ResponseMessage(localMsgId.inc, None, responses))
 
     case AutoIncTick =>
-      val aiNodes = cfg.autoIncConfig.map(_.nodes).getOrElse(0)
-      log.debug("[{}]: auto-incrementing {} nodes", linkName, aiNodes)
-      val updates = (1 to aiNodes) flatMap { _ =>
-        val index = Random.nextInt(cfg.nodeCount)
-        incCounter(index + 1)
+      // TODO auto-inc node count is ignored, will be removed
+      val updates = (1 to cfg.nodeCount) flatMap { index =>
+        incCounter(index)
       } flatMap (_.updates.getOrElse(Nil))
       if (!updates.isEmpty) {
         val response = DSAResponse(0, Some(Open), Some(updates.toList))
@@ -286,9 +283,9 @@ object BenchmarkResponder {
   /**
     * Creates a new BenchmarkResponder props.
     */
-  def props(linkName: String, out: ActorRef, influx: InfluxClient,
+  def props(linkName: String, out: ActorRef, collector: ActorRef,
             cfg: BenchmarkResponderConfig = EnvBenchmarkResponderConfig) =
-    Props(new BenchmarkResponder(linkName, out, influx, cfg))
+    Props(new BenchmarkResponder(linkName, out, collector, cfg))
 }
 
 /**

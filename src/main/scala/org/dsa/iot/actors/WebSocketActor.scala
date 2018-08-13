@@ -1,46 +1,29 @@
 package org.dsa.iot.actors
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable}
-import com.paulgoldbaum.influxdbclient.Point
+import akka.actor.{Actor, ActorLogging, ActorRef}
+import org.dsa.iot.actors.StatsCollector.{LogInboundMessage, LogOutboundMessage}
 import org.dsa.iot.rpc._
-import org.dsa.iot.util.{EnvUtils, InfluxClient}
-
-import scala.concurrent.duration._
 
 /**
   * Base class for benchmark endpoint actors.
   */
-abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRef, influx: InfluxClient,
+abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRef, collector: ActorRef,
                               cfg: WebSocketActorConfig) extends Actor with ActorLogging {
-
-  import WebSocketActor._
-  import context.dispatcher
 
   protected val localMsgId = new IntCounter(1)
 
   protected val scheduler = context.system.scheduler
 
-  private var statsJob: Cancellable = _
-
   /**
     * Schedules a stats job.
     */
-  override def preStart: Unit = {
-    log.debug("[{}]: scheduling stats reporting at {}", linkName, cfg.statsInterval)
-    statsJob = scheduler.schedule(cfg.statsInterval, cfg.statsInterval, self, StatsTick)
-
-    log.info("[{}]: started", linkName)
-  }
+  override def preStart: Unit = log.info("[{}]: started", linkName)
 
   /**
     * Stops the stats job.
     */
-  override def postStop: Unit = {
-    log.debug("[{}]: canceling stats scheduler", linkName)
-    statsJob.cancel
+  override def postStop: Unit = log.info("[{}]: stopped", linkName)
 
-    log.info("[{}]: stopped", linkName)
-  }
 
   /**
     * Handles incoming messages.
@@ -48,22 +31,16 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
     * @return
     */
   def receive: Receive = {
-    case m @ EmptyMessage        =>
+    case m @ EmptyMessage         =>
       log.debug("[{}]: received empty message from WebSocket, ignoring...", linkName)
-      reportInboundMessage(m)
-    case m @ PingMessage(msg, _) =>
+      logInboundMessage(m)
+    case m @ PingMessage(msg, _)  =>
       log.debug("[{}]: received ping from WebSocket with msg={}, acking...", linkName, msg)
       sendAck(msg)
-      reportInboundMessage(m)
-    case StatsTick               =>
-      reportStats
-  }
-
-  /**
-    * Overridden by subclasses to report stats data.
-    */
-  protected def reportStats(): Unit = {
-    log.debug("[{}]: TODO: reporting stats", linkName)
+      logInboundMessage(m)
+    case m @ AllowedMessage(_, _) =>
+      log.debug("[{}]: received \"allowed\" message from WebSocket, ignoring...", linkName)
+      logInboundMessage(m)
   }
 
   /**
@@ -77,75 +54,24 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
   protected def sendToSocket(msg: DSAMessage) = {
     log.debug("[{}]: sending {} to WebSocket", linkName, msg)
     out ! msg
-    reportOutboundMessage(msg)
+    logOutboundMessage(msg)
   }
 
   /**
-    * Reports inbound message statistics.
+    * Sends an inbound message to the stats collector.
     *
     * @param msg
     * @return
     */
-  protected def reportInboundMessage(msg: DSAMessage) =
-    influx.bulkWrite(msg)(message2points(true))
+  protected def logInboundMessage(msg: DSAMessage) = collector ! LogInboundMessage(linkName, linkType, msg)
 
   /**
-    * Reports outbound message statistics.
+    * Sends an outbound message to the stats collector.
     *
     * @param msg
     * @return
     */
-  protected def reportOutboundMessage(msg: DSAMessage) =
-    influx.bulkWrite(msg)(message2points(false))
-
-  /**
-    * Converts a DSAMessage instance into an InfluxDB point.
-    *
-    * @param inbound
-    * @param msg
-    * @return
-    */
-  protected def message2points(inbound: Boolean)(msg: DSAMessage) = {
-    val base = Point("message")
-      .addTag("linkName", linkName)
-      .addTag("linkType", linkType.toString)
-      .addTag("msgType", msg.getClass.getSimpleName)
-      .addTag("inbound", inbound.toString)
-
-    msg match {
-      case RequestMessage(_, _, requests)   =>
-        base.addField("requests", requests.size) +: (requestsToPoints(linkName, linkType, inbound)(requests)).toList
-      case ResponseMessage(_, _, responses) =>
-        List(base
-          .addField("responses", responses.size)
-          .addField("updates", responses.map(_.updates.getOrElse(Nil).size).sum)
-          .addField("errors", responses.map(_.error).filter(_.isDefined).size))
-      case _                                =>
-        List(base.addField("dummy", -1))
-    }
-  }
-
-  /**
-    * Converts a batch of requests into InfluxDB points.
-    *
-    * @param linkName
-    * @param linkType
-    * @param inbound
-    * @param requests
-    * @return
-    */
-  protected def requestsToPoints(linkName: String, linkType: LinkType, inbound: Boolean)
-                                (requests: Iterable[DSARequest]) = {
-
-    val base = Point("request")
-      .addTag("linkName", linkName)
-      .addTag("linkType", linkType.toString)
-      .addTag("inbound", inbound.toString)
-
-    requests.groupBy(_.method) map {
-      case (method, reqs) => base.addTag("method", method.toString).addField("size", reqs.size)
-    }
-  }
+  protected def logOutboundMessage(msg: DSAMessage) = collector ! LogOutboundMessage(linkName, linkType, msg)
 }
 
 /**
@@ -157,22 +83,14 @@ object WebSocketActor {
     * Sent by scheduler to initiate stats reporting.
     */
   case object StatsTick
-
 }
 
 /**
   * WebSocketActor configuration.
   */
-trait WebSocketActorConfig {
-  /**
-    * @return statistics reporting interval.
-    */
-  def statsInterval: FiniteDuration
-}
+trait WebSocketActorConfig
 
 /**
   * WebSocketActorConfig implementation based on environment properties.
   */
-abstract class EnvWebSocketActorConfig extends WebSocketActorConfig {
-  val statsInterval = EnvUtils.getMillis("stats.interval", 10 seconds)
-}
+abstract class EnvWebSocketActorConfig extends WebSocketActorConfig

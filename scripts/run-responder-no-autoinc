@@ -5,9 +5,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 env \
   "broker.url=http://localhost:8080/conn" \
   "stats.interval=20000" \
-  "responder.instances=10" \
-  "responder.nodes=20" \
+  "responder.instances=20" \
+  "responder.nodes=100" \
   "responder.name=bm-rsp" \
-  "responder.autoinc.interval=1000" \
-  "responder.autoinc.nodes=5" \
   $DIR/../target/universal/stage/bin/benchmark-responder-app
