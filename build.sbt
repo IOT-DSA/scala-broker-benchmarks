@@ -25,7 +25,7 @@ scalacOptions ++= Seq(
 
 // packaging
 enablePlugins(JavaAppPackaging)
-mainClass in Compile := Some("org.dsa.iot.benchmark.BrokerConnectionTest")
+mainClass in Compile := Some("org.dsa.iot.benchmark.ConnectionTest")
 	
 // dependencies
 libraryDependencies ++= Seq(
