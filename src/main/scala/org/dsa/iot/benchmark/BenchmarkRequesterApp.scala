@@ -14,7 +14,7 @@ import scala.util.Random
   * Launches a set of BenchmarkRequesters and establishes connections to a DSA broker.
   *
   * It accepts the following environment properties:
-  *   broker.url          - DSA broker url, default "http://localhost:8080/conn"
+  *   broker.url          - DSA broker url, default [[DefaultBrokerUrl]]
   *   requester.instances - the number of requesters to launch, default 1
   *   requester.batch     - the number of node actions triggered by requester, default 10
   *   requester.name      - the requester name prefix, default "benchmark-responder"
@@ -34,7 +34,7 @@ object BenchmarkRequesterApp extends App {
 
   val log = LoggerFactory.getLogger(getClass)
 
-  val brokerUrl = EnvUtils.getString("broker.url", "http://localhost:8080/conn")
+  val brokerUrl = EnvUtils.getString("broker.url", DefaultBrokerUrl)
 
   val reqInstances = EnvUtils.getInt("requester.instances", 1)
   val reqNamePrefix = EnvUtils.getString("requester.name", "benchmark-requester")

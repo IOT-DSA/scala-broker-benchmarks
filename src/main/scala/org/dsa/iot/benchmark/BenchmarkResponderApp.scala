@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
   * Launches a set of BenchmarkResponders and establishes connections to a DSA broker.
   *
   * It accepts the following environment properties:
-  *   broker.url          - DSA broker url, default "http://localhost:8080/conn"
+  *   broker.url          - DSA broker url, default [[DefaultBrokerUrl]]
   *   responder.instances - the number of responders to launch, default 1
   *   responder.nodes     - the number of nodes per responder, default 10
   *   responder.name      - the responder name prefix, default "benchmark-responder"
@@ -23,7 +23,7 @@ object BenchmarkResponderApp extends App {
 
   val log = LoggerFactory.getLogger(getClass)
 
-  val brokerUrl = EnvUtils.getString("broker.url", "http://localhost:8080/conn")
+  val brokerUrl = EnvUtils.getString("broker.url", DefaultBrokerUrl)
 
   val instances = EnvUtils.getInt("responder.instances", 1)
   val nodeCount = EnvUtils.getInt("responder.nodes", 10)

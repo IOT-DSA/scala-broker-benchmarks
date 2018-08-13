@@ -2,7 +2,7 @@ package org.dsa.iot.benchmark
 
 import akka.actor.{Actor, ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
-import org.dsa.iot.actors.{AutoIncrementConfig, BenchmarkResponder, BenchmarkResponderConfig, LinkType}
+import org.dsa.iot.actors.{BenchmarkResponder, BenchmarkResponderConfig, LinkType}
 import org.dsa.iot.handshake.LocalKeys
 import org.dsa.iot.util.EnvUtils
 import org.dsa.iot.ws.WebSocketConnector
@@ -12,13 +12,13 @@ import org.slf4j.LoggerFactory
   * A simple broker connection test.
   *
   * It accepts the following environment properties:
-  *   broker.url          - DSA broker url, default "http://localhost:8080/conn"
+  *   broker.url          - DSA broker url, default [[DefaultBrokerUrl]]
   */
 object ConnectionTest extends App {
 
   val log = LoggerFactory.getLogger(getClass)
 
-  val brokerUrl = EnvUtils.getString("broker.url", "http://localhost:8080/conn")
+  val brokerUrl = EnvUtils.getString("broker.url", DefaultBrokerUrl)
 
   log.info("Launching a connection test for broker at {}", brokerUrl)
 
