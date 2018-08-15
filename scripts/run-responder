@@ -3,8 +3,8 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 env \
-  "broker.url=http://localhost:8080/conn" \
-  "responder.range=1-10" \
-  "responder.nodes=10" \
-  "responder.autoinc.interval=1000" \
+  "broker.url=http://localhost:9000/conn" \
+  "responder.range=1-20" \
+  "responder.nodes=100" \
+  "responder.autoinc.interval=500" \
   $DIR/../target/universal/stage/bin/benchmark-responder-app

@@ -46,7 +46,7 @@ class BenchmarkResponder(linkName: String, out: ActorRef, collector: ActorRef, c
     * Schedules the auto-increment job.
     */
   override def preStart: Unit = {
-    log.debug("[{}]: starting responder")
+    log.debug("[{}]: starting responder", linkName)
 
     autoIncJob = cfg.autoIncInterval map { interval =>
       scheduler.schedule(interval, interval, self, AutoIncTick)
@@ -75,7 +75,7 @@ class BenchmarkResponder(linkName: String, out: ActorRef, collector: ActorRef, c
   override def receive: Receive = super.receive orElse {
 
     case msg: RequestMessage =>
-      log.debug("[{}]: received {}", linkName, msg)
+      log.debug("[{}]: received {}", linkName, formatMsg(msg))
       logInboundMessage(msg)
       val responses = msg.requests flatMap processRequest
       sendToSocket(ResponseMessage(localMsgId.inc, None, responses))

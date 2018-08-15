@@ -13,7 +13,7 @@ package object benchmark {
 
   val ResponderNamePrefix = "bmrsp"
 
-  val RequesterNamePrefix = "bmrsp"
+  val RequesterNamePrefix = "bmreq"
 
   /**
     * Formats a dslink name.
