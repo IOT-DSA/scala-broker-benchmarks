@@ -1,12 +1,14 @@
 package org.dsa.iot.actors
 
+import java.time.Instant
+
 import akka.actor.{Actor, ActorLogging, Props}
 import com.paulgoldbaum.influxdbclient.Parameter.Precision
 import com.paulgoldbaum.influxdbclient.Point
 import org.dsa.iot.actors.StatsCollector.{LogInboundMessage, LogOutboundMessage}
-import org.dsa.iot.rpc.{DSAMessage, DSARequest, RequestMessage, ResponseMessage}
+import org.dsa.iot.rpc.DSAMethod.{Subscribe, Unsubscribe}
+import org.dsa.iot.rpc._
 import org.dsa.iot.util.InfluxClient
-import org.joda.time.DateTime
 
 /**
   * Collects messages from benchmark actors and writes statistics to InfluxDB.
@@ -16,7 +18,9 @@ import org.joda.time.DateTime
   */
 class StatsCollector(influx: InfluxClient, logAuxMessages: Boolean) extends Actor with ActorLogging {
 
-  implicit val precision = Precision.MICROSECONDS
+  implicit val precision = Precision.NANOSECONDS
+
+  private var lastNanos: Long = 0L
 
   def receive: Receive = {
     case LogInboundMessage(linkName, linkType, msg, ts) =>
@@ -40,25 +44,29 @@ class StatsCollector(influx: InfluxClient, logAuxMessages: Boolean) extends Acto
     * @param msg
     * @return
     */
-  protected def message2points(linkName: String, linkType: LinkType, inbound: Boolean, ts: DateTime)
+  protected def message2points(linkName: String, linkType: LinkType, inbound: Boolean, ts: Instant)
                               (msg: DSAMessage) = {
-    val base = Point("message", ts.getMillis * 1000)
+
+    val current = ts.getEpochSecond * 1000000000L + ts.getNano
+    lastNanos = if (current > lastNanos) current else lastNanos + 1
+
+    val base = Point("message", lastNanos)
       .addTag("linkName", linkName)
       .addTag("linkType", linkType.toString)
       .addTag("msgType", msg.getClass.getSimpleName)
       .addTag("inbound", inbound.toString)
 
     msg match {
-      case RequestMessage(_, _, requests)   =>
+      case RequestMessage(_, _, requests)       =>
         base.addField("requests", requests.size) +: (requestsToPoints(linkName, linkType, inbound)(requests)).toList
       case ResponseMessage(_, _, responses) =>
         List(base
           .addField("responses", responses.size)
           .addField("updates", responses.map(_.updates.getOrElse(Nil).size).sum)
           .addField("errors", responses.map(_.error).filter(_.isDefined).size))
-      case _ if logAuxMessages              =>
+      case _ if logAuxMessages                  =>
         List(base.addField("dummy", -1))
-      case _                                =>
+      case _                                    =>
         Nil
     }
   }
@@ -81,7 +89,14 @@ class StatsCollector(influx: InfluxClient, logAuxMessages: Boolean) extends Acto
       .addTag("inbound", inbound.toString)
 
     requests.groupBy(_.method) map {
-      case (method, reqs) => base.addTag("method", method.toString).addField("size", reqs.size)
+      case (Subscribe, reqs)   =>
+        val subs = reqs.collect { case SubscribeRequest(_, paths) => paths.size }.sum
+        base.addTag("method", Subscribe.toString).addField("reqs", reqs.size).addField("subs", subs)
+      case (Unsubscribe, reqs) =>
+        val unsubs = reqs.collect { case UnsubscribeRequest(_, sids) => sids.size }.sum
+        base.addTag("method", Unsubscribe.toString).addField("reqs", reqs.size).addField("unsubs", unsubs)
+      case (method, reqs)      =>
+        base.addTag("method", method.toString).addField("reqs", reqs.size)
     }
   }
 }
@@ -91,9 +106,9 @@ class StatsCollector(influx: InfluxClient, logAuxMessages: Boolean) extends Acto
   */
 object StatsCollector {
 
-  case class LogInboundMessage(linkName: String, linkType: LinkType, msg: DSAMessage, ts: DateTime = DateTime.now)
+  case class LogInboundMessage(linkName: String, linkType: LinkType, msg: DSAMessage, ts: Instant = Instant.now)
 
-  case class LogOutboundMessage(linkName: String, linkType: LinkType, msg: DSAMessage, ts: DateTime = DateTime.now)
+  case class LogOutboundMessage(linkName: String, linkType: LinkType, msg: DSAMessage, ts: Instant = Instant.now)
 
   /**
     * Creates a new StatsCollector props instance.
