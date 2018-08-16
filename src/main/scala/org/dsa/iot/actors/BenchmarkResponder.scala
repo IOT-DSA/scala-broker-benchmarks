@@ -81,12 +81,14 @@ class BenchmarkResponder(linkName: String, out: ActorRef, collector: ActorRef, c
       sendToSocket(ResponseMessage(localMsgId.inc, None, responses))
 
     case AutoIncTick =>
-      val updates = (1 to cfg.nodeCount) flatMap { index =>
-        incCounter(index)
-      } flatMap (_.updates.getOrElse(Nil))
-      if (!updates.isEmpty) {
-        val response = DSAResponse(0, Some(Open), Some(updates.toList))
-        sendToSocket(ResponseMessage(localMsgId.inc, None, List(response)))
+      val rawResponses = (1 to cfg.nodeCount) flatMap incCounter
+      if (!rawResponses.isEmpty) {
+        val responses = if (cfg.collateAutoIncUpdates) {
+          val updates = rawResponses flatMap (_.updates.getOrElse(Nil))
+          List(DSAResponse(0, Some(Open), Some(updates.toList)))
+        } else
+          rawResponses
+        sendToSocket(ResponseMessage(localMsgId.inc, None, responses.toList))
       }
 
     case msg => log.warning("[{}]: received unknown message - {}", linkName, msg)
@@ -299,9 +301,12 @@ trait BenchmarkResponderConfig extends WebSocketActorConfig {
   def nodeCount: Int
 
   /**
-    * Auto-increment interval (if None that means no auto-increment).
-    *
-    * @return
+    * @return auto-increment interval (if None that means no auto-increment).
     */
   def autoIncInterval: Option[FiniteDuration]
+
+  /**
+    * @return whether to combine multiple updates from auto-increment job into a single response.
+    */
+  def collateAutoIncUpdates: Boolean
 }

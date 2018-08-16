@@ -7,4 +7,5 @@ env \
   "responder.range=1-20" \
   "responder.nodes=100" \
   "responder.autoinc.interval=500" \
+  "responder.autoinc.collate=true" \
   $DIR/../target/universal/stage/bin/benchmark-responder-app

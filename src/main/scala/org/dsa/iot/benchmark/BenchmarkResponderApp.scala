@@ -59,10 +59,13 @@ object BenchmarkResponderApp extends App {
   * BenchmarkResponderConfig implementation based on environment properties:
   *   responder.nodes                - the number of nodes per responder, default 10
   *   responder.autoinc.interval     - the auto increment interval (optional, default is no auto-inc)
+  *   responder.autoinc.collate      - flag indicating whether to collate updates, default is false
   */
 object EnvBenchmarkResponderConfig extends EnvWebSocketActorConfig with BenchmarkResponderConfig {
 
   val nodeCount: Int = EnvUtils.getInt("responder.nodes", 10)
 
   val autoIncInterval: Option[FiniteDuration] = EnvUtils.getMillisOption("responder.autoinc.interval")
+
+  val collateAutoIncUpdates: Boolean = EnvUtils.getBoolean("responder.autoinc.collate", false)
 }

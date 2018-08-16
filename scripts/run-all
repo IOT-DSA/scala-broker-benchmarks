@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+env \
+  "broker.url=http://localhost:9000/conn" \
+  "responder.range=1-20" \
+  "responder.nodes=50" \
+  "responder.autoinc.interval=500" \
+  "responder.autoinc.collate=true" \
+  $DIR/../target/universal/stage/bin/benchmark-responder-app &
+
+sleep 5
+
+env \
+  "broker.url=http://localhost:9000/conn" \
+  "requester.range=1-20" \
+  "requester.subscribe=true" \
+  "requester.batch=100" \
+  "requester.timeout=5000" \
+  "responder.range=1-20" \
+  "responder.nodes=50" \
+  $DIR/../target/universal/stage/bin/benchmark-requester-app &
