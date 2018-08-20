@@ -1,6 +1,7 @@
 package org.dsa.iot.actors
 
 import akka.actor.{ActorRef, Cancellable, Props}
+import org.dsa.iot.actors.StatsCollector.LogResponderConfig
 import org.dsa.iot.rpc.DSAValue._
 import org.dsa.iot.rpc.StreamState._
 import org.dsa.iot.rpc._
@@ -46,7 +47,9 @@ class BenchmarkResponder(linkName: String, out: ActorRef, collector: ActorRef, c
     * Schedules the auto-increment job.
     */
   override def preStart: Unit = {
-    log.debug("[{}]: starting responder")
+    log.debug("[{}]: starting responder", linkName)
+
+    collector ! LogResponderConfig(linkName, cfg)
 
     autoIncJob = cfg.autoIncInterval map { interval =>
       scheduler.schedule(interval, interval, self, AutoIncTick)
@@ -75,18 +78,20 @@ class BenchmarkResponder(linkName: String, out: ActorRef, collector: ActorRef, c
   override def receive: Receive = super.receive orElse {
 
     case msg: RequestMessage =>
-      log.debug("[{}]: received {}", linkName, msg)
+      log.debug("[{}]: received {}", linkName, formatMsg(msg))
       logInboundMessage(msg)
       val responses = msg.requests flatMap processRequest
       sendToSocket(ResponseMessage(localMsgId.inc, None, responses))
 
     case AutoIncTick =>
-      val updates = (1 to cfg.nodeCount) flatMap { index =>
-        incCounter(index)
-      } flatMap (_.updates.getOrElse(Nil))
-      if (!updates.isEmpty) {
-        val response = DSAResponse(0, Some(Open), Some(updates.toList))
-        sendToSocket(ResponseMessage(localMsgId.inc, None, List(response)))
+      val rawResponses = (1 to cfg.nodeCount) flatMap incCounter
+      if (!rawResponses.isEmpty) {
+        val responses = if (cfg.collateAutoIncUpdates) {
+          val updates = rawResponses flatMap (_.updates.getOrElse(Nil))
+          List(DSAResponse(0, Some(Open), Some(updates.toList)))
+        } else
+          rawResponses
+        sendToSocket(ResponseMessage(localMsgId.inc, None, responses.toList))
       }
 
     case msg => log.warning("[{}]: received unknown message - {}", linkName, msg)
@@ -299,9 +304,12 @@ trait BenchmarkResponderConfig extends WebSocketActorConfig {
   def nodeCount: Int
 
   /**
-    * Auto-increment interval (if None that means no auto-increment).
-    *
-    * @return
+    * @return auto-increment interval (if None that means no auto-increment).
     */
   def autoIncInterval: Option[FiniteDuration]
+
+  /**
+    * @return whether to combine multiple updates from auto-increment job into a single response.
+    */
+  def collateAutoIncUpdates: Boolean
 }

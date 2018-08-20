@@ -31,6 +31,7 @@ object ConnectionTest extends App {
   val cfg = new BenchmarkResponderConfig {
     val nodeCount = 1
     val autoIncInterval = None
+    val collateAutoIncUpdates: Boolean = false
   }
 
   val propsFunc = (out: ActorRef) => BenchmarkResponder.props(dslinkName, out, Actor.noSender, cfg)

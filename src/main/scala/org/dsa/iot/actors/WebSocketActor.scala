@@ -19,7 +19,6 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
     */
   override def postStop: Unit = log.info("[{}]: stopped", linkName)
 
-
   /**
     * Handles incoming messages.
     *
@@ -32,6 +31,9 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
     case m @ PingMessage(msg, _)  =>
       log.debug("[{}]: received ping from WebSocket with msg={}, acking...", linkName, msg)
       sendAck(msg)
+      logInboundMessage(m)
+    case m @ PongMessage(ack)     =>
+      log.debug("[{}]: received pong from WebSocket with ack={}, ignoring...", linkName, ack)
       logInboundMessage(m)
     case m @ AllowedMessage(_, _) =>
       log.debug("[{}]: received \"allowed\" message from WebSocket, ignoring...", linkName)
@@ -47,7 +49,7 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
     * Sends a DSAMessage to a WebSocket connection.
     */
   protected def sendToSocket(msg: DSAMessage) = {
-    log.debug("[{}]: sending {} to WebSocket", linkName, msg)
+    log.debug("[{}]: sending {} to WebSocket", linkName, formatMsg(msg))
     out ! msg
     logOutboundMessage(msg)
   }
@@ -78,6 +80,7 @@ object WebSocketActor {
     * Sent by scheduler to initiate stats reporting.
     */
   case object StatsTick
+
 }
 
 /**

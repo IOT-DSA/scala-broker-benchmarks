@@ -1,6 +1,7 @@
 package org.dsa.iot.actors
 
 import akka.actor.{ActorRef, Cancellable, Props}
+import org.dsa.iot.actors.StatsCollector.LogRequesterConfig
 import org.dsa.iot.rpc._
 
 import scala.concurrent.duration._
@@ -32,7 +33,9 @@ class BenchmarkRequester(linkName: String, out: ActorRef, collector: ActorRef, p
     * Subscribes for updates and schedules an invocation job.
     */
   override def preStart: Unit = {
-    log.debug("[{}]: starting requester")
+    log.debug("[{}]: starting requester with paths {}", linkName, paths)
+
+    collector ! LogRequesterConfig(linkName, paths, cfg)
 
     // subscribe for node updates
     if (cfg.subscribe) {
@@ -79,7 +82,7 @@ class BenchmarkRequester(linkName: String, out: ActorRef, collector: ActorRef, p
   override def receive: Receive = super.receive orElse {
 
     case msg: ResponseMessage =>
-      log.debug("[{}]: received {}", linkName, msg)
+      log.debug("[{}]: received {}", linkName, formatMsg(msg))
       logInboundMessage(msg)
 
     case SendBatch =>
