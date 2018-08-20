@@ -10,14 +10,11 @@ REQ_TIMEOUT=2000
 
 RSP_RANGE=1-10
 RSP_NODES=50
-RSP_AUTO_INC=5000
 
 env \
   "broker.url=$BROKER_URL" \
   "responder.range=$RSP_RANGE" \
   "responder.nodes=$RSP_NODES" \
-  "responder.autoinc.interval=$RSP_AUTO_INC" \
-  "responder.autoinc.collate=true" \
   $DIR/../target/universal/stage/bin/benchmark-responder-app &
 
 sleep 5
