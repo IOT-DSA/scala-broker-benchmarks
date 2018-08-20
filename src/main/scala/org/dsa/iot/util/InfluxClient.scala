@@ -2,7 +2,7 @@ package org.dsa.iot.util
 
 import com.paulgoldbaum.influxdbclient.Parameter.Consistency.Consistency
 import com.paulgoldbaum.influxdbclient.Parameter.Precision.Precision
-import com.paulgoldbaum.influxdbclient.{InfluxDB, Point}
+import com.paulgoldbaum.influxdbclient._
 import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -72,4 +72,25 @@ object InfluxClient {
     val dbName = cfg.getString("database")
     new InfluxClient(host, port, dbName)
   }
+
+  /* converters to simplify Field creation */
+  implicit def tupleToStringField(tuple: (String, String)) = StringField(tuple._1, tuple._2)
+
+  implicit def tupleToDoubleField(tuple: (String, Double)) = DoubleField(tuple._1, tuple._2)
+
+  implicit def tupleToLongField(tuple: (String, Long)) = LongField(tuple._1, tuple._2)
+
+  implicit def tupleToIntField(tuple: (String, Int)) = LongField(tuple._1, tuple._2)
+
+  implicit def tupleToBooleanField(tuple: (String, Boolean)) = BooleanField(tuple._1, tuple._2)
+
+  /**
+    * Creates a sequence of tags.
+    */
+  def tags(tuples: (String, String)*): Seq[Tag] = tuples map (Tag.apply _).tupled
+
+  /**
+    * Creates a sequence of fields.
+    */
+  def fields(flds: Field*) = Seq(flds: _*)
 }

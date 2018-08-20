@@ -1,6 +1,7 @@
 package org.dsa.iot.actors
 
 import akka.actor.{ActorRef, Cancellable, Props}
+import org.dsa.iot.actors.StatsCollector.LogResponderConfig
 import org.dsa.iot.rpc.DSAValue._
 import org.dsa.iot.rpc.StreamState._
 import org.dsa.iot.rpc._
@@ -47,6 +48,8 @@ class BenchmarkResponder(linkName: String, out: ActorRef, collector: ActorRef, c
     */
   override def preStart: Unit = {
     log.debug("[{}]: starting responder", linkName)
+
+    collector ! LogResponderConfig(linkName, cfg)
 
     autoIncJob = cfg.autoIncInterval map { interval =>
       scheduler.schedule(interval, interval, self, AutoIncTick)

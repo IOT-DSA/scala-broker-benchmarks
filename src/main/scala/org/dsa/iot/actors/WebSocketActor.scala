@@ -19,7 +19,6 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
     */
   override def postStop: Unit = log.info("[{}]: stopped", linkName)
 
-
   /**
     * Handles incoming messages.
     *
