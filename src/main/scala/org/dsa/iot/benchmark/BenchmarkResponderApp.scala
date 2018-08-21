@@ -43,6 +43,7 @@ object BenchmarkResponderApp extends App {
   val collector = system.actorOf(StatsCollector.props(influx, false))
 
   val connections = indexRange map { index =>
+    Thread.sleep(500)
     val connector = new WebSocketConnector(LocalKeys.generate)
     val name = responderName(index)
     val propsFunc = (out: ActorRef) => BenchmarkResponder.props(name, out, collector, EnvBenchmarkResponderConfig)

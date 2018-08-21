@@ -81,7 +81,7 @@ class BenchmarkResponder(linkName: String, out: ActorRef, collector: ActorRef, c
       log.debug("[{}]: received {}", linkName, formatMsg(msg))
       logInboundMessage(msg)
       val responses = msg.requests flatMap processRequest
-      sendToSocket(ResponseMessage(localMsgId.inc, None, responses))
+      sendToSocket(ResponseMessage(localMsgId.inc, Some(msg.msg), responses))
 
     case AutoIncTick =>
       val rawResponses = (1 to cfg.nodeCount) flatMap incCounter

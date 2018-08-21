@@ -43,7 +43,7 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
   /**
     * Sends an ACK back to the client.
     */
-  private def sendAck(remoteMsgId: Int) = sendToSocket(PongMessage(remoteMsgId))
+  protected def sendAck(remoteMsgId: Int) = sendToSocket(PongMessage(remoteMsgId))
 
   /**
     * Sends a DSAMessage to a WebSocket connection.

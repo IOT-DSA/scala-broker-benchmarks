@@ -239,7 +239,7 @@
       "nullText": null,
       "postfix": "",
       "postfixFontSize": "50%",
-      "prefix": "Avg:",
+      "prefix": "",
       "prefixFontSize": "50%",
       "rangeMaps": [
         {
@@ -428,117 +428,6 @@
         "#d44a3a"
       ],
       "datasource": "${DS_DSA}",
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
-      },
-      "gridPos": {
-        "h": 3,
-        "w": 4,
-        "x": 12,
-        "y": 1
-      },
-      "id": 24,
-      "interval": null,
-      "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
-      "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": " nodes",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false
-      },
-      "tableColumn": "",
-      "targets": [
-        {
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "null"
-              ],
-              "type": "fill"
-            }
-          ],
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "select count(distinct(pathId)) from req_config where subscribe='true'",
-          "rawQuery": true,
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": []
-        }
-      ],
-      "thresholds": "100000",
-      "title": "Subscribed",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "avg"
-    },
-    {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": true,
-      "colors": [
-        "#64b0c8",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
-      ],
-      "datasource": "${DS_DSA}",
       "decimals": null,
       "format": "ms",
       "gauge": {
@@ -551,7 +440,7 @@
       "gridPos": {
         "h": 3,
         "w": 4,
-        "x": 16,
+        "x": 12,
         "y": 1
       },
       "id": 19,
@@ -663,7 +552,7 @@
       "gridPos": {
         "h": 3,
         "w": 4,
-        "x": 20,
+        "x": 16,
         "y": 1
       },
       "id": 22,
@@ -1011,7 +900,7 @@
       "gridPos": {
         "h": 3,
         "w": 4,
-        "x": 12,
+        "x": 8,
         "y": 4
       },
       "id": 23,
@@ -1124,7 +1013,7 @@
       "gridPos": {
         "h": 3,
         "w": 4,
-        "x": 16,
+        "x": 12,
         "y": 4
       },
       "id": 29,
@@ -1252,6 +1141,117 @@
         "#d44a3a"
       ],
       "datasource": "${DS_DSA}",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 4,
+        "y": 8
+      },
+      "id": 24,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": " nodes",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "select count(distinct(pathId)) from req_config where subscribe='true'",
+          "rawQuery": true,
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": []
+        }
+      ],
+      "thresholds": "100000",
+      "title": "Subscribed",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
+        }
+      ],
+      "valueName": "avg"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": true,
+      "colorValue": false,
+      "colors": [
+        "#3f2b5b",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_DSA}",
       "decimals": null,
       "format": "opm",
       "gauge": {
@@ -1264,7 +1264,7 @@
       "gridPos": {
         "h": 3,
         "w": 4,
-        "x": 4,
+        "x": 8,
         "y": 8
       },
       "id": 26,
@@ -1376,7 +1376,7 @@
       "gridPos": {
         "h": 3,
         "w": 4,
-        "x": 8,
+        "x": 12,
         "y": 8
       },
       "id": 32,
@@ -1603,7 +1603,7 @@
       "gridPos": {
         "h": 3,
         "w": 4,
-        "x": 12,
+        "x": 16,
         "y": 8
       },
       "id": 33,
@@ -1872,7 +1872,7 @@
       ],
       "datasource": "${DS_DSA}",
       "decimals": null,
-      "format": "opm",
+      "format": "short",
       "gauge": {
         "maxValue": 100,
         "minValue": 0,
@@ -1887,6 +1887,132 @@
         "y": 11
       },
       "id": 34,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": " nodes",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false
+      },
+      "tableColumn": "autoIncMs",
+      "targets": [
+        {
+          "alias": "",
+          "groupBy": [
+            {
+              "params": [
+                "1m"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "measurement": "request",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "select sum(subs) from request where inbound='true'",
+          "rawQuery": true,
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "reqs"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "sum"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "inbound",
+              "operator": "=",
+              "value": "false"
+            },
+            {
+              "condition": "AND",
+              "key": "method",
+              "operator": "=",
+              "value": "invoke"
+            }
+          ]
+        }
+      ],
+      "thresholds": "150000",
+      "title": "Subscribed",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
+        }
+      ],
+      "valueName": "max"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": true,
+      "colors": [
+        "#f2c96d",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_DSA}",
+      "decimals": null,
+      "format": "opm",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": false
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 8,
+        "y": 11
+      },
+      "id": 43,
       "interval": null,
       "links": [],
       "mappingType": 1,
@@ -2009,7 +2135,7 @@
       "gridPos": {
         "h": 3,
         "w": 4,
-        "x": 8,
+        "x": 12,
         "y": 11
       },
       "id": 35,
@@ -2129,7 +2255,7 @@
       "gridPos": {
         "h": 3,
         "w": 4,
-        "x": 12,
+        "x": 16,
         "y": 11
       },
       "id": 36,
@@ -3524,7 +3650,7 @@
     "list": []
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {
@@ -3555,5 +3681,5 @@
   "timezone": "",
   "title": "Broker Benchmarks",
   "uid": "rpjzdZ5mk",
-  "version": 98
+  "version": 107
 }

@@ -84,6 +84,7 @@ class BenchmarkRequester(linkName: String, out: ActorRef, collector: ActorRef, p
     case msg: ResponseMessage =>
       log.debug("[{}]: received {}", linkName, formatMsg(msg))
       logInboundMessage(msg)
+      sendAck(msg.msg)
 
     case SendBatch =>
       val requests = invPaths map (InvokeRequest(ridGen.inc, _))
