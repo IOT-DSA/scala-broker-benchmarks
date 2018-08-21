@@ -56,6 +56,7 @@ object BenchmarkRequesterApp extends App {
   val collector = system.actorOf(StatsCollector.props(influx, false))
 
   val connections = reqIndexRange map { index =>
+    Thread.sleep(500)
     val connector = new WebSocketConnector(LocalKeys.generate)
     val name = requesterName(index)
     val paths = (1 to batchSize) map { _ =>
