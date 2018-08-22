@@ -20,6 +20,15 @@ class InfluxClient(host: String, port: Int, dbName: String) {
   private val db = dbConn.selectDatabase(dbName)
 
   /**
+    * Runs an InfluxDB query and returns a Future of the result.
+    *
+    * @param q
+    * @param precision
+    * @return
+    */
+  def query(q: String)(implicit precision: Precision = null) = db.query(q, precision)
+
+  /**
     * Converts the supplied value into InfluxDB point and writes it to the database.
     *
     * @param value

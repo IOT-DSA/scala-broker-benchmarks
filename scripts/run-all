@@ -4,30 +4,28 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 BROKER_URL=http://localhost:9000/conn
 
-REQ_RANGE=1-10
+REQ_COUNT=10
 REQ_BATCH=50
 REQ_TIMEOUT=2000
 
-RSP_RANGE=1-10
+RSP_COUNT=10
 RSP_NODES=50
-RSP_AUTO_INC=5000
+RSP_AUTO_INC=2000
 
 env \
   "broker.url=$BROKER_URL" \
-  "responder.range=$RSP_RANGE" \
+  "responder.count=$RSP_COUNT" \
   "responder.nodes=$RSP_NODES" \
   "responder.autoinc.interval=$RSP_AUTO_INC" \
   "responder.autoinc.collate=true" \
   $DIR/../target/universal/stage/bin/benchmark-responder-app &
 
-sleep 5
+sleep 10
 
 env \
   "broker.url=$BROKER_URL" \
-  "requester.range=$REQ_RANGE" \
+  "requester.count=$REQ_COUNT" \
   "requester.subscribe=true" \
   "requester.timeout=$REQ_TIMEOUT" \
   "requester.batch=$REQ_BATCH" \
-  "responder.range=$RSP_RANGE" \
-  "responder.nodes=$RSP_NODES" \
   $DIR/../target/universal/stage/bin/benchmark-requester-app &
