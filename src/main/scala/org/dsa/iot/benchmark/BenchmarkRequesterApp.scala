@@ -10,7 +10,7 @@ import org.dsa.iot.util.{EnvUtils, InfluxClient}
 import org.dsa.iot.ws.WebSocketConnector
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 import scala.util.Random
 
 /**
@@ -21,9 +21,10 @@ import scala.util.Random
   *
   *   requester.count           - the number of requesters to launch, default 1
   *   requester.batch           - the number of nodes to subscribe to actions triggered by requester
-  * and/or the number of Invoke requests in a batch (per requester); default 10
-  *   requester.timeout         - the interval between Invoke batches.
-  *   requester.subscribe       - whether requester must subscribe to node updates initially.
+  *                               and/or the number of Invoke requests in a batch (per requester); default 10
+  *   requester.timeout         - the interval between Invoke batches
+  *   requester.subscribe       - whether requester must subscribe to node updates initially
+  *   rampup.delay              - delay between launching dslinks, default is 100 ms
   */
 object BenchmarkRequesterApp extends App {
 
@@ -33,6 +34,7 @@ object BenchmarkRequesterApp extends App {
 
   val reqCount = EnvUtils.getInt("requester.count", 1)
   val batchSize = EnvUtils.getInt("requester.batch", 10)
+  val delay = EnvUtils.getMillis("rampup.delay", 100 milliseconds)
 
   log.info("Launching {} requester(s), bound to {} nodes each", reqCount, batchSize)
 
@@ -50,9 +52,9 @@ object BenchmarkRequesterApp extends App {
   val responderRanges = getAllResponderRanges
 
   val connections = uuids map { uuid =>
+    Thread.sleep(delay.toMillis)
     val name = RequesterNamePrefix + uuid
     log.debug("Starting requester [{}]", name)
-    Thread.sleep(500)
     val connector = new WebSocketConnector(LocalKeys.generate)
     responderRanges map getRandomResponderPaths(batchSize) flatMap { paths =>
       val propsFunc = (out: ActorRef) => BenchmarkRequester.props(name, out, collector, paths, EnvBenchmarkRequesterConfig)

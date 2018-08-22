@@ -10,7 +10,7 @@ import org.dsa.iot.util.{EnvUtils, InfluxClient}
 import org.dsa.iot.ws.WebSocketConnector
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 
 /**
   * Launches a set of BenchmarkResponders and establishes connections to a DSA broker.
@@ -21,6 +21,7 @@ import scala.concurrent.duration.FiniteDuration
   *   responder.count                - the number of responders to launch, default 1
   *   responder.nodes                - the number of nodes per responder, default 10
   *   responder.autoinc.interval     - the auto increment interval (optional, default is no auto-inc)
+  *   rampup.delay                   - delay between launching dslinks, default is 100 ms
   */
 object BenchmarkResponderApp extends App {
 
@@ -30,6 +31,7 @@ object BenchmarkResponderApp extends App {
 
   val rspCount = EnvUtils.getInt("responder.count", 10)
   val nodeCount = EnvUtils.getInt("responder.nodes", 10)
+  val delay = EnvUtils.getMillis("rampup.delay", 100 milliseconds)
 
   log.info("Launching {} responder(s) with {} nodes each", rspCount, nodeCount)
 
@@ -45,9 +47,9 @@ object BenchmarkResponderApp extends App {
   val collector = system.actorOf(StatsCollector.props(influx, false))
 
   val connections = uuids map { uuid =>
+    Thread.sleep(delay.toMillis)
     val name = ResponderNamePrefix + uuid
     log.debug("Starting responder [{}]", name)
-    Thread.sleep(500)
     val connector = new WebSocketConnector(LocalKeys.generate)
     val propsFunc = (out: ActorRef) => BenchmarkResponder.props(name, out, collector, EnvBenchmarkResponderConfig)
     connector.connect(name, brokerUrl, LinkType.Responder, propsFunc)

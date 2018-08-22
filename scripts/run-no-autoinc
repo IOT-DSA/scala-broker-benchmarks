@@ -17,7 +17,7 @@ env \
   "responder.nodes=$RSP_NODES" \
   $DIR/../target/universal/stage/bin/benchmark-responder-app &
 
-sleep 5
+sleep 10
 
 env \
   "broker.url=$BROKER_URL" \
