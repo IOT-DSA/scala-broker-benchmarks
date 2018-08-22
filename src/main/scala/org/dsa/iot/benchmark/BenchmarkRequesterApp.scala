@@ -1,5 +1,7 @@
 package org.dsa.iot.benchmark
 
+import java.util.UUID
+
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
 import org.dsa.iot.actors._
@@ -17,18 +19,11 @@ import scala.util.Random
   * It accepts the following environment properties:
   *   broker.url                - DSA broker url, default [[DefaultBrokerUrl]]
   *
-  *   requester.range           - the requester index range in x-y format, default 1-1
+  *   requester.count           - the number of requesters to launch, default 1
   *   requester.batch           - the number of nodes to subscribe to actions triggered by requester
-  *                               and/or the number of Invoke requests in a batch (per requester); default 10
+  * and/or the number of Invoke requests in a batch (per requester); default 10
   *   requester.timeout         - the interval between Invoke batches.
   *   requester.subscribe       - whether requester must subscribe to node updates initially.
-  *
-  *   responder.range           - the responder index range in x-y format, default 1-1
-  *   responder.nodes           - the number of nodes per responder, default 10
-  *
-  * Note: Since the responders' target nodes are chosen randomly, there is a chance of duplicate
-  * subscription/invocation paths in each requester's configuration, hence the total number of unique target
-  * nodes per responder could be less than `requester.batch`.
   */
 object BenchmarkRequesterApp extends App {
 
@@ -36,15 +31,12 @@ object BenchmarkRequesterApp extends App {
 
   val brokerUrl = randomBrokerUrl
 
-  val reqIndexRange = parseRange(EnvUtils.getString("requester.range", "1-1"))
+  val reqCount = EnvUtils.getInt("requester.count", 1)
   val batchSize = EnvUtils.getInt("requester.batch", 10)
 
-  val rspIndexRange = parseRange(EnvUtils.getString("responder.range", "1-1"))
-  val rspNodeCount = EnvUtils.getInt("responder.nodes", 10)
+  log.info("Launching {} requester(s), bound to {} nodes each", reqCount, batchSize)
 
-  log.info(
-    "Launching {} requester(s) indexed from {} to {}, bound to {} nodes each",
-    reqIndexRange.size: Integer, reqIndexRange.start: Integer, reqIndexRange.end: Integer, batchSize: Integer)
+  val uuids = (1 to reqCount) map (_ => UUID.randomUUID.toString.replace('-', '_'))
 
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
@@ -55,24 +47,57 @@ object BenchmarkRequesterApp extends App {
 
   val collector = system.actorOf(StatsCollector.props(influx, false))
 
-  val connections = reqIndexRange map { index =>
+  val responderRanges = getAllResponderRanges
+
+  val connections = uuids map { uuid =>
+    val name = RequesterNamePrefix + uuid
+    log.debug("Starting requester [{}]", name)
     Thread.sleep(500)
     val connector = new WebSocketConnector(LocalKeys.generate)
-    val name = requesterName(index)
-    val paths = (1 to batchSize) map { _ =>
-      val rspIndex = Random.nextInt(rspIndexRange.size) + rspIndexRange.start
-      val rspName = responderName(rspIndex)
-      val nodeIndex = Random.nextInt(rspNodeCount) + 1
-      s"/downstream/$rspName/data$nodeIndex"
+    responderRanges map getRandomResponderPaths(batchSize) flatMap { paths =>
+      val propsFunc = (out: ActorRef) => BenchmarkRequester.props(name, out, collector, paths, EnvBenchmarkRequesterConfig)
+      connector.connect(name, brokerUrl, LinkType.Requester, propsFunc)
     }
-    val propsFunc = (out: ActorRef) => BenchmarkRequester.props(name, out, collector, paths.toSet,
-      EnvBenchmarkRequesterConfig)
-    connector.connect(name, brokerUrl, LinkType.Requester, propsFunc)
   }
 
   sys.addShutdownHook {
     connections foreach (_ foreach (_.terminate))
     influx.close()
+  }
+
+  /**
+    * Retrieves all responder names and their node ranges from InfluxDB.
+    *
+    * @return
+    */
+  private def getAllResponderRanges = {
+    val fqr = influx.query("select * from rsp_config")
+
+    fqr map { qr =>
+      val allRecords = qr.series flatMap (_.records)
+      allRecords map { record =>
+        val linkName = record("linkName").toString
+        val nodeCount = record("nodeCount").asInstanceOf[Number].intValue
+        val range = 1 to nodeCount
+        linkName -> range
+      }
+    }
+  }
+
+  /**
+    * Randomly selects a subset of responder paths.
+    *
+    * @param count
+    * @param nodesAndRanges
+    * @return
+    */
+  private def getRandomResponderPaths(count: Int)(nodesAndRanges: List[(String, Range)]) = {
+    val tuples = nodesAndRanges flatMap {
+      case (name, range) => range.map(index => name -> index)
+    }
+    Random.shuffle(tuples).take(count) map {
+      case (name, index) => s"/downstream/$name/data$index"
+    }
   }
 }
 

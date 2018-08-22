@@ -1,5 +1,7 @@
 package org.dsa.iot.benchmark
 
+import java.util.UUID
+
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
 import org.dsa.iot.actors._
@@ -16,7 +18,7 @@ import scala.concurrent.duration.FiniteDuration
   * It accepts the following environment properties:
   *   broker.url                     - DSA broker url, default [[DefaultBrokerUrl]]
   *
-  *   responder.range                - the responder index range in x-y format, default 1-1
+  *   responder.count                - the number of responders to launch, default 1
   *   responder.nodes                - the number of nodes per responder, default 10
   *   responder.autoinc.interval     - the auto increment interval (optional, default is no auto-inc)
   */
@@ -26,12 +28,12 @@ object BenchmarkResponderApp extends App {
 
   val brokerUrl = randomBrokerUrl
 
-  val indexRange = parseRange(EnvUtils.getString("responder.range", "1-1"))
+  val rspCount = EnvUtils.getInt("responder.count", 10)
   val nodeCount = EnvUtils.getInt("responder.nodes", 10)
 
-  log.info(
-    "Launching {} responder(s) indexed from {} to {} with {} nodes each",
-    indexRange.size: Integer, indexRange.start: Integer, indexRange.end: Integer, nodeCount: Integer)
+  log.info("Launching {} responder(s) with {} nodes each", rspCount, nodeCount)
+
+  val uuids = (1 to rspCount) map (_ => UUID.randomUUID.toString.replace('-', '_'))
 
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
@@ -42,10 +44,11 @@ object BenchmarkResponderApp extends App {
 
   val collector = system.actorOf(StatsCollector.props(influx, false))
 
-  val connections = indexRange map { index =>
+  val connections = uuids map { uuid =>
+    val name = ResponderNamePrefix + uuid
+    log.debug("Starting responder [{}]", name)
     Thread.sleep(500)
     val connector = new WebSocketConnector(LocalKeys.generate)
-    val name = responderName(index)
     val propsFunc = (out: ActorRef) => BenchmarkResponder.props(name, out, collector, EnvBenchmarkResponderConfig)
     connector.connect(name, brokerUrl, LinkType.Responder, propsFunc)
   }
