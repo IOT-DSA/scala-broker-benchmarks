@@ -24,9 +24,15 @@ scalacOptions ++= Seq(
   "-Xexperimental")
 
 // packaging
-enablePlugins(JavaAppPackaging)
+enablePlugins(DockerPlugin, JavaAppPackaging)
 mainClass in Compile := Some("org.dsa.iot.benchmark.ConnectionTest")
-	
+
+// docker
+dockerBaseImage := "java:latest"
+maintainer := "Vlad Orzhekhovskiy <vlad@uralian.com>"
+packageName in Docker := "iotdsa/broker-benchmarks"
+dockerUpdateLatest := true
+
 // dependencies
 libraryDependencies ++= Seq(
   "com.typesafe.akka"       %% "akka-stream"             % AKKA_VERSION,
