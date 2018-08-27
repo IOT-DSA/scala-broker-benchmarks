@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+
+  influxdb:
+    image: influxdb
+    container_name: influxdb
+    restart: always
+    ports:
+      - 8086:8086
+      - 8083:8083
+    environment:
+      INFLUXDB_DB: dsa
+    networks:
+      - dsnet
+
+  broker:
+    image: iotdsa/broker-scala:0.3.1
+    container_name: broker
+    depends_on:
+      - influxdb
+    ports:
+      - 9000:9000
+    networks:
+      - dsnet
+
+  conn-test:
+    image: iotdsa/broker-benchmarks
+    container_name: conn-test
+    depends_on:
+      - influxdb
+      - broker
+    entrypoint:
+      - /opt/docker/bin/scala-broker-benchmarks
+      - -Dinflux.host=influxdb
+    environment:
+      broker.url: http://broker:9000/conn
+    networks:
+      - dsnet
+
+networks:
+  dsnet:
+    external:
+      name:  dsnet
