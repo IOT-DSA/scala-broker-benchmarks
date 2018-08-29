@@ -26,7 +26,6 @@ services:
 
   responder:
     image: iotdsa/broker-benchmarks
-    container_name: responder
     depends_on:
       - influxdb
       - broker
@@ -35,15 +34,14 @@ services:
       - -Dinflux.host=influxdb
     environment:
       broker.url: http://broker:9000/conn
-      responder.count: 2
-      responder.nodes: 10
+      responder.count: 10
+      responder.nodes: 50
       responder.autoinc.interval: 1000
     networks:
       - dsnet
 
   requester:
     image: iotdsa/broker-benchmarks
-    container_name: requester
     depends_on:
       - influxdb
       - broker
@@ -53,11 +51,9 @@ services:
       - -Dinflux.host=influxdb
     environment:
       broker.url: http://broker:9000/conn
-      requester.count: 5
-      requester.batch: 10
-      requester.timeout: 1000
+      requester.count: 10
+      requester.batch: 50
       requester.subscribe: "true"
-      rampup.delay: 200
     networks:
       - dsnet
 

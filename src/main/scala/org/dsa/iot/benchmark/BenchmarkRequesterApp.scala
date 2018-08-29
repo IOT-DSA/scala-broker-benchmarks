@@ -25,6 +25,7 @@ import scala.util.Random
   *   requester.timeout         - the interval between Invoke batches
   *   requester.subscribe       - whether requester must subscribe to node updates initially
   *   rampup.delay              - delay between launching dslinks, default is 100 ms
+  *   stats.interval            - the interval for batching stats before sending them to InfluxDB, default 1s
   */
 object BenchmarkRequesterApp extends App {
 
@@ -34,9 +35,11 @@ object BenchmarkRequesterApp extends App {
 
   val reqCount = EnvUtils.getInt("requester.count", 1)
   val batchSize = EnvUtils.getInt("requester.batch", 10)
-  val delay = EnvUtils.getMillis("rampup.delay", 100 milliseconds)
+  val rampupDelay = EnvUtils.getMillis("rampup.delay", 100 milliseconds)
 
-  log.info("Launching {} requester(s), bound to {} nodes each", reqCount, batchSize)
+  val statsInterval = EnvUtils.getMillis("stats.interval", 1 second)
+
+  log.info(s"Launching $reqCount requester(s), bound to $batchSize nodes each to connect to $brokerUrl")
 
   val uuids = (1 to reqCount) map (_ => UUID.randomUUID.toString.replace('-', '_'))
 
@@ -47,12 +50,12 @@ object BenchmarkRequesterApp extends App {
 
   val influx = InfluxClient.getInstance
 
-  val collector = system.actorOf(StatsCollector.props(influx, false))
+  val collector = system.actorOf(StatsCollector.props(influx, false, statsInterval))
 
   val responderRanges = getAllResponderRanges
 
   val connections = uuids map { uuid =>
-    Thread.sleep(delay.toMillis)
+    Thread.sleep(rampupDelay.toMillis)
     val name = RequesterNamePrefix + uuid
     log.debug("Starting requester [{}]", name)
     val connector = new WebSocketConnector(LocalKeys.generate)

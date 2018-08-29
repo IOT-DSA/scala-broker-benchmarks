@@ -8,6 +8,7 @@ import org.dsa.iot.util.InfluxClient
 import org.dsa.iot.ws.WebSocketConnector
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 /**
@@ -31,7 +32,7 @@ object ConnectionTest extends App {
 
   val influx = InfluxClient.getInstance
 
-  val collector = system.actorOf(StatsCollector.props(influx, false))
+  val collector = system.actorOf(StatsCollector.props(influx, false, Duration.Zero))
 
   val connector = new WebSocketConnector(LocalKeys.generate)
   val dslinkName = "benchmark-test"
