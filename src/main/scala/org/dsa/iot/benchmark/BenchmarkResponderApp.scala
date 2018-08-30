@@ -22,6 +22,7 @@ import scala.concurrent.duration._
   *   responder.nodes                - the number of nodes per responder, default 10
   *   responder.autoinc.interval     - the auto increment interval (optional, default is no auto-inc)
   *   rampup.delay                   - delay between launching dslinks, default is 100 ms
+  *   stats.interval                 - the interval for batching stats before sending them to InfluxDB, default 1s
   */
 object BenchmarkResponderApp extends App {
 
@@ -29,11 +30,13 @@ object BenchmarkResponderApp extends App {
 
   val brokerUrl = randomBrokerUrl
 
-  val rspCount = EnvUtils.getInt("responder.count", 10)
+  val rspCount = EnvUtils.getInt("responder.count", 1)
   val nodeCount = EnvUtils.getInt("responder.nodes", 10)
-  val delay = EnvUtils.getMillis("rampup.delay", 100 milliseconds)
+  val rampupDelay = EnvUtils.getMillis("rampup.delay", 100 milliseconds)
 
-  log.info("Launching {} responder(s) with {} nodes each", rspCount, nodeCount)
+  val statsInterval = EnvUtils.getMillis("stats.interval", 1 second)
+
+  log.info(s"Launching $rspCount responder(s) with $nodeCount nodes each to connect to $brokerUrl")
 
   val uuids = (1 to rspCount) map (_ => UUID.randomUUID.toString.replace('-', '_'))
 
@@ -44,10 +47,10 @@ object BenchmarkResponderApp extends App {
 
   val influx = InfluxClient.getInstance
 
-  val collector = system.actorOf(StatsCollector.props(influx, false))
+  val collector = system.actorOf(StatsCollector.props(influx, false, statsInterval))
 
   val connections = uuids map { uuid =>
-    Thread.sleep(delay.toMillis)
+    Thread.sleep(rampupDelay.toMillis)
     val name = ResponderNamePrefix + uuid
     log.debug("Starting responder [{}]", name)
     val connector = new WebSocketConnector(LocalKeys.generate)
