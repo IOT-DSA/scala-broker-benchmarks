@@ -12,7 +12,7 @@ services:
     environment:
       INFLUXDB_DB: dsa
     networks:
-      - dsnet
+      - dsanet
 
   broker:
     image: iotdsa/broker-scala:0.3.1
@@ -22,7 +22,7 @@ services:
     ports:
       - 9000:9000
     networks:
-      - dsnet
+      - dsanet
 
   responder:
     image: iotdsa/broker-benchmarks
@@ -38,7 +38,7 @@ services:
       responder.nodes: 50
       responder.autoinc.interval: 1000
     networks:
-      - dsnet
+      - dsanet
 
   requester:
     image: iotdsa/broker-benchmarks
@@ -55,9 +55,9 @@ services:
       requester.batch: 50
       requester.subscribe: "true"
     networks:
-      - dsnet
+      - dsanet
 
 networks:
-  dsnet:
+  dsanet:
     external:
-      name:  dsnet
+      name:  dsanet_local
