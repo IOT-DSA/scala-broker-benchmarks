@@ -1,8 +1,11 @@
 package org.dsa.iot.actors
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable}
 import org.dsa.iot.actors.StatsCollector.{LogInboundMessage, LogOutboundMessage}
+import org.dsa.iot.actors.WebSocketActor._
 import org.dsa.iot.rpc._
+
+import scala.concurrent.duration._
 
 /**
   * Base class for benchmark endpoint actors.
@@ -10,14 +13,28 @@ import org.dsa.iot.rpc._
 abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRef, collector: ActorRef,
                               cfg: WebSocketActorConfig) extends Actor with ActorLogging {
 
+  import context.dispatcher
+
   protected val localMsgId = new IntCounter(1)
 
   protected val scheduler = context.system.scheduler
 
+  private var pingJob: Cancellable = _
+
+  /**
+    * Schedules regular ping requests to the broker.
+    */
+  override def preStart(): Unit = {
+    pingJob = scheduler.schedule(PingInterval, PingInterval, self, PingTick)
+  }
+
   /**
     * Logs the actor stoppage.
     */
-  override def postStop: Unit = log.info("[{}]: stopped", linkName)
+  override def postStop: Unit = {
+    pingJob.cancel()
+    log.info("[{}]: stopped", linkName)
+  }
 
   /**
     * Handles incoming messages.
@@ -38,6 +55,8 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
     case m @ AllowedMessage(_, _) =>
       log.debug("[{}]: received \"allowed\" message from WebSocket, ignoring...", linkName)
       logInboundMessage(m)
+    case PingTick                 =>
+      sendToSocket(PongMessage(localMsgId.inc))
   }
 
   /**
@@ -77,9 +96,14 @@ abstract class WebSocketActor(linkName: String, linkType: LinkType, out: ActorRe
 object WebSocketActor {
 
   /**
-    * Sent by scheduler to initiate stats reporting.
+    * Interval for regular Ping requests to the broker.
     */
-  case object StatsTick
+  val PingInterval = 30 seconds
+
+  /**
+    * Sent by scheduler to initiate ping to the broker.
+    */
+  case object PingTick
 
 }
 
